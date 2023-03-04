@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 25.0.1705.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shiny.Health", "Shiny.Health\Shiny.Health.csproj", "{60730C0B-7236-4E5F-8ECE-9C28366F6CA5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample", "Sample\Sample.csproj", "{34382830-3201-4E68-B7D0-E8E3DE9A7D4F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3E29D5B4-9337-4163-A81C-88C5C929562C}"
+	ProjectSection(SolutionItems) = preProject
+		readme.md = readme.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{60730C0B-7236-4E5F-8ECE-9C28366F6CA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60730C0B-7236-4E5F-8ECE-9C28366F6CA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60730C0B-7236-4E5F-8ECE-9C28366F6CA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60730C0B-7236-4E5F-8ECE-9C28366F6CA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34382830-3201-4E68-B7D0-E8E3DE9A7D4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34382830-3201-4E68-B7D0-E8E3DE9A7D4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34382830-3201-4E68-B7D0-E8E3DE9A7D4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34382830-3201-4E68-B7D0-E8E3DE9A7D4F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {575AFBB3-4160-459E-9D3C-A2BCFB851343}
+	EndGlobalSection
+EndGlobal

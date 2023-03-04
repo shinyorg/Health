@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sample="clr-namespace:Sample"
+             x:DataType="sample:HealthTestViewModel"
+             x:Class="Sample.HealthTestPage"
+             Title="Health Test">
+
+    <!--<RefreshView IsRefreshing="{Binding IsBusy}"
+                 Command="{Binding Load}">
+        <sv:SettingsView>
+            <sv:Section Title="Filters">
+                <sv:DatePickerCell Title="Start"
+                                   ValueText="{Binding Start, Converter={StaticResource DateOnly}}" />
+
+                <sv:DatePickerCell Title="End"
+                                   ValueText="{Binding End, Converter={StaticResource DateOnly}}"
+                                   HintText="{Binding ErrorText}"
+                                   HintTextColor="Red" />
+            </sv:Section>
+
+            <sv:Section Title="Values">
+                <sv:LabelCell Title="Calories (total - kilocalories?)" ValueText="{Binding Calories}" />
+                <sv:LabelCell Title="Distance (total - meters?)" ValueText="{Binding Distance}" />
+                <sv:LabelCell Title="Heart Rate (avg)" ValueText="{Binding HeartRate}" />
+                <sv:LabelCell Title="Steps (total)" ValueText="{Binding Steps}" />
+            </sv:Section>
+
+
+            <sv:Section Title="Monitoring" ItemsSource="{Binding Monitors}">
+                <sv:Section.ItemTemplate>
+                    <DataTemplate x:DataType="integrations:MonitorViewModel">
+                        <sv:CommandCell Title="{Binding StatusText}"
+                                        ValueText="{Binding Value}"
+                                        Command="{Binding Toggle}" />
+                    </DataTemplate>
+                </sv:Section.ItemTemplate>
+            </sv:Section>
+        </sv:SettingsView>
+    </RefreshView>-->
+</ContentPage>

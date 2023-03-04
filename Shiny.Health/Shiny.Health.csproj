@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net7.0;net7.0-ios;net7.0-android</TargetFrameworks>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="Platforms\**\*.cs" />
+        <Compile Remove="Platforms\**\*.cs" />
+
+        <PackageReference Include="Shiny.Core" Version="3.0.0-alpha-0523" />
+        <!--<PackageReference Include="UnitsNet" Version="5.0.0-rc004" />-->
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-android'">
+        <Compile Include="Platforms\Shared\**\*.cs" />
+        <Compile Include="Platforms\Android\**\*.cs" />
+
+        <PackageReference Include="Xamarin.GooglePlayServices.Auth" Version="120.3.0" />
+        <PackageReference Include="Xamarin.GooglePlayServices.Fitness" Version="121.1.0.1" />
+        <!--<PackageReference Include="Google.Apis.Fitness.v1" Version="1.58.0.2454" />-->
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
+        <Compile Include="Platforms\Shared\**\*.cs" />
+        <Compile Include="Platforms\iOS\**\*.cs" />
+    </ItemGroup>
+</Project>
