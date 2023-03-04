@@ -13,6 +13,9 @@
         <PackageProjectUrl>https://shinylib.net</PackageProjectUrl>
         <PackageReleaseNotes>https://shinylib.net/release-notes</PackageReleaseNotes>
         <PackageTags>shiny googlefit applehealth</PackageTags>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/shinyorg/health</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -20,9 +23,16 @@
         <DebugType>portable</DebugType>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PublishRepositoryUrl>True</PublishRepositoryUrl>
+        <EmbedUntrackedSources>True</EmbedUntrackedSources>
     </PropertyGroup>
 
 	<ItemGroup>
+        <None Include="..\nuget.png" Pack="true" PackagePath="icon.png" />
+        <None Include="..\nuget.txt" Pack="true" PackagePath="readme.txt" />
+        <None Include="..\readme.md" Pack="true" PackagePath="\" />
+
 		<PackageReference Include="NerdBank.GitVersioning" Version="3.5.109" PrivateAssets="All" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
