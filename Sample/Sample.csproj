@@ -54,6 +54,7 @@
 		<PackageReference Include="ReactiveUI.Fody" Version="18.4.22" />
 		<PackageReference Include="Shiny.Framework" Version="3.0.0-alpha-0058" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
+		<PackageReference Include="AiForms.Maui.SettingsView" Version="0.1.14-pre" />
     </ItemGroup>
 
 	<ItemGroup>

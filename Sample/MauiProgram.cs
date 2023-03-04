@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Maui;
+﻿using AiForms.Settings;
+using CommunityToolkit.Maui;
 using Prism.DryIoc;
 
 namespace Sample;
@@ -10,6 +11,9 @@ public static class MauiProgram
         .CreateBuilder()
         .UseMauiApp<App>()
         .UseMauiCommunityToolkit()
+        .ConfigureMauiHandlers(handlers =>
+            handlers.AddSettingsViewHandler()
+        )
         .UseShinyFramework(
             new DryIocContainerExtension(),
             prism => prism.OnAppStart("NavigationPage/HealthTestPage")
@@ -26,8 +30,11 @@ public static class MauiProgram
 
     static MauiAppBuilder RegisterInfrastructure(this MauiAppBuilder builder)
     {
+#if DEBUG
+        builder.Logging.AddConsole();
+#endif
+        builder.Services.AddSingleton(DeviceDisplay.Current);
         builder.Services.AddHealthIntegration();
-
         builder.Services.AddGlobalCommandExceptionHandler(new(
 #if DEBUG
             ErrorAlertType.FullError

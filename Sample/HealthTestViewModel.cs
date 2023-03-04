@@ -37,27 +37,38 @@ public class HealthTestViewModel : FuncViewModel
         });
         this.BindBusyCommand(this.Load);
 
-        //this.OnReady = (_, disp) =>
-        //{
-        //    display.KeepScreenOn = true;
-        //    disp.Add(Disposable.Create(() => display.KeepScreenOn = false));
+        this.Appearing = async () =>
+        {
+            display.KeepScreenOn = true;
+            this.DeactivateWith.Add(Disposable.Create(() => display.KeepScreenOn = false));
 
-        //    this.Start = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
-        //    this.End = DateOnly.FromDateTime(DateTime.Now);
+            var result = await health.RequestPermission(
+                new Permission(DistanceHealthMetric.Default, PermissionType.Read),
+                new Permission(CaloriesHealthMetric.Default, PermissionType.Read),
+                new Permission(StepCountHealthMetric.Default, PermissionType.Read),
+                new Permission(HeartRateHealthMetric.Default, PermissionType.Read)
+            );
+            if (!result)
+            {
+                await this.Dialogs.Alert("Failed permission check");
+                return;
+            }
+            this.Start = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
+            this.End = DateOnly.FromDateTime(DateTime.Now);
 
-        //    this.WhenAnyValue(x => x.Start, x => x.End)
-        //        .Subscribe(_ => this.Load.Execute(null))
-        //        .DisposedBy(disp);
+            this.WhenAnyValue(x => x.Start, x => x.End)
+                .Subscribe(_ => this.Load.Execute(null))
+                .DisposedBy(this.DeactivateWith);
 
-        //    //this.Monitors = new List<MonitorViewModel>
-        //    //{
-        //    //    new MonitorViewModel("Steps (total)", health.MonitorSteps().RunningAccumulation().Select(x => x.ToString())),
-        //    //    new MonitorViewModel("Calories (total)", health.MonitorCalories().RunningAccumulation().Select(x => x.ToString())),
-        //    //    new MonitorViewModel("Distance (total)", health.MonitorDistance().RunningAccumulation().Select(x => x.ToString())),
-        //    //    new MonitorViewModel("Heart Rate (bpm)", health.MonitorHeartRate().Select(x => x.ToString()))
-        //    //};
-        //    //this.Monitors.ForEach(disp.Add);
-        //};
+            //this.Monitors = new List<MonitorViewModel>
+            //{
+            //    new MonitorViewModel("Steps (total)", health.MonitorSteps().RunningAccumulation().Select(x => x.ToString())),
+            //    new MonitorViewModel("Calories (total)", health.MonitorCalories().RunningAccumulation().Select(x => x.ToString())),
+            //    new MonitorViewModel("Distance (total)", health.MonitorDistance().RunningAccumulation().Select(x => x.ToString())),
+            //    new MonitorViewModel("Heart Rate (bpm)", health.MonitorHeartRate().Select(x => x.ToString()))
+            //};
+            //this.Monitors.ForEach(disp.Add);
+        };
     }
 
 
