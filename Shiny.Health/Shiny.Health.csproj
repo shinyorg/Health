@@ -1,9 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <Description>Cross Platform health data - Apple Health and Google Fit Integrations</Description>
         <TargetFrameworks>net7.0;net7.0-ios;net7.0-android</TargetFrameworks>
         <Nullable>enable</Nullable>
+
+        <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+        <Authors>Allan Ritchie</Authors>
+        <Owners>aritchie; shinylib</Owners>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageProjectUrl>https://shinylib.net</PackageProjectUrl>
+        <PackageReleaseNotes>https://shinylib.net/release-notes</PackageReleaseNotes>
+        <PackageTags>shiny googlefit applehealth</PackageTags>
     </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <DesignTimeBuild>false</DesignTimeBuild>
+        <DebugType>portable</DebugType>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="NerdBank.GitVersioning" Version="3.5.109" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    </ItemGroup>
 
     <ItemGroup>
         <None Include="Platforms\**\*.cs" />
