@@ -1,4 +1,24 @@
-﻿
+﻿# Shiny Health
+
+## iOS
+
+Info.plist
+```xml
+<key>UIRequiredDeviceCapabilities</key>
+<string>healthkithealthkit</string>
+<key>NSHealthUpdateUsageDescription</key>
+<string>We need to say something useful here</string>
+<key>NSHealthShareUsageDescription</key>
+<string>We need to say something useful here</string>
+```
+
+Entitlements.plist
+```xml
+<key>com.apple.developer.healthkit</key>
+<true />
+<key>com.apple.developer.healthkit.background-delivery</key>
+<true />
+```
 
 FitBit
 https://vipin-johney.medium.com/fitbit-authentication-xamarin-forms-5900ed8e9caa
