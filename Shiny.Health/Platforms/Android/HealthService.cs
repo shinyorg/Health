@@ -1,7 +1,5 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,9 +8,7 @@ using Android.Content;
 using Android.Gms.Auth.Api.SignIn;
 using Android.Gms.Common;
 using Android.Gms.Fitness;
-using Android.Gms.Fitness.Data;
 using Android.Gms.Fitness.Request;
-using Java.Lang;
 using Java.Util.Concurrent;
 using Shiny.Hosting;
 
@@ -71,10 +67,12 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
     )
     {
         var timeUnit = interval.ToNative();
+        var unixStart = Math.Abs(start.ToUnixTimeSeconds());
+        var unixEnd = Math.Abs(end.ToUnixTimeSeconds());
         var readRequest = new DataReadRequest.Builder()
             .Aggregate(metric.DataType, metric.AggregationDataType)
             .BucketByTime(1, interval.ToNative())
-            .SetTimeRange(start.ToUnixTimeSeconds(), end.ToUnixTimeSeconds(), timeUnit)
+            .SetTimeRange(unixStart, unixEnd, timeUnit)
             .Build();
 
         var list = new List<HealthResult<T>>();
@@ -94,7 +92,7 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
                         var dstart = DateTimeOffset.FromUnixTimeMilliseconds(dp.GetStartTime(TimeUnit.Milliseconds));
                         var dend = DateTimeOffset.FromUnixTimeMilliseconds(dp.GetEndTime(TimeUnit.Milliseconds));
                         var value = metric.FromNative(dp);
-                        list.Add(new HealthResult<T>(start, end, value));
+                        list.Add(new HealthResult<T>(dstart, dend, value));
                     }
                 }
             }
@@ -104,25 +102,14 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
 
 
     public Task<bool> IsAuthorized(params Permission[] permissions)
-    {
-        var result = false;
-        if (this.IsGooglePlayServicesAvailable())
-        {
-            var options = this.ToFitnessOptions(permissions);
-            result = GoogleSignIn.HasPermissions(
-                GoogleSignIn.GetLastSignedInAccount(this.platform.CurrentActivity),
-                options
-            );
-        }
-        return Task.FromResult(result);
-    }
+        => Task.FromResult(this.IsAuthorizedInternal(permissions));
 
 
     TaskCompletionSource<bool>? permissionRequest;
     public Task<bool> RequestPermission(params Permission[] permissions)
     {
-        if (!this.IsGooglePlayServicesAvailable())
-            return Task.FromResult(false);
+        if (this.IsAuthorizedInternal(permissions))
+            return Task.FromResult(true);
 
         this.permissionRequest = new();
         //using var _ = cancelToken.Register(() => this.permissionRequest.TrySetCanceled());
@@ -134,14 +121,28 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
             GoogleSignIn.GetLastSignedInAccount(this.platform.AppContext),
             options
         );
-        return this.permissionRequest.Task;
+        return this.permissionRequest.Task;        
+    }
+
+
+    protected bool IsAuthorizedInternal(params Permission[] permissions)
+    {
+        var result = false;
+        if (this.IsGooglePlayServicesAvailable())
+        {
+            var options = this.ToFitnessOptions(permissions);
+            result = GoogleSignIn.HasPermissions(
+                GoogleSignIn.GetLastSignedInAccount(this.platform.CurrentActivity),
+                options
+            );
+        }
+        return result;
     }
 
 
     protected FitnessOptions ToFitnessOptions(Permission[] permissions)
     {
         var options = FitnessOptions.InvokeBuilder();
-
 
         foreach (var permission in permissions)
         {

@@ -14,6 +14,18 @@ public class HealthTestViewModel : FuncViewModel
     {
         this.Load = ReactiveCommand.CreateFromTask(async () =>
         {
+            var result = await health.RequestPermission(
+                new Permission(DistanceHealthMetric.Default, PermissionType.Read),
+                new Permission(CaloriesHealthMetric.Default, PermissionType.Read),
+                new Permission(StepCountHealthMetric.Default, PermissionType.Read),
+                new Permission(HeartRateHealthMetric.Default, PermissionType.Read)
+            );
+            if (!result)
+            {
+                await this.Dialogs.Alert("Failed permission check");
+                return;
+            }
+
             var start = (DateTimeOffset)this.Start.ToDateTime(TimeOnly.MinValue);
             var end = (DateTimeOffset)this.End.ToDateTime(TimeOnly.MaxValue);
             if (start < end)
@@ -37,29 +49,25 @@ public class HealthTestViewModel : FuncViewModel
         });
         this.BindBusyCommand(this.Load);
 
-        this.Appearing = async () =>
+        this.NavTo = async (_, _) =>
         {
             display.KeepScreenOn = true;
             this.DeactivateWith.Add(Disposable.Create(() => display.KeepScreenOn = false));
 
-            var result = await health.RequestPermission(
-                new Permission(DistanceHealthMetric.Default, PermissionType.Read),
-                new Permission(CaloriesHealthMetric.Default, PermissionType.Read),
-                new Permission(StepCountHealthMetric.Default, PermissionType.Read),
-                new Permission(HeartRateHealthMetric.Default, PermissionType.Read)
-            );
-            if (!result)
-            {
-                await this.Dialogs.Alert("Failed permission check");
-                return;
-            }
             this.Start = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
             this.End = DateOnly.FromDateTime(DateTime.Now);
 
-            this.WhenAnyValue(x => x.Start, x => x.End)
+            this.WhenAnyValue(x => x.Start)
+                .Skip(1)
                 .Subscribe(_ => this.Load.Execute(null))
                 .DisposedBy(this.DeactivateWith);
 
+            this.WhenAnyValue(x => x.End)
+                .Skip(1)
+                .Subscribe(_ => this.Load.Execute(null))
+                .DisposedBy(this.DeactivateWith);
+
+            //this.Load.Execute(null);
             //this.Monitors = new List<MonitorViewModel>
             //{
             //    new MonitorViewModel("Steps (total)", health.MonitorSteps().RunningAccumulation().Select(x => x.ToString())),
@@ -82,10 +90,10 @@ public class HealthTestViewModel : FuncViewModel
     [Reactive] public double Distance { get; private set; }
     [Reactive] public double HeartRate { get; private set; }
 
-    [Reactive] public List<MonitorViewModel> Monitors { get; private set; }
+    //[Reactive] public List<MonitorViewModel> Monitors { get; private set; }
 }
 
-
+/*
 public class MonitorViewModel : ReactiveObject, IDisposable
 {
     readonly string description;
@@ -130,3 +138,4 @@ public class MonitorViewModel : ReactiveObject, IDisposable
 
     public void Dispose() => this.Stop();
 }
+*/

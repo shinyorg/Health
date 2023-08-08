@@ -9,6 +9,25 @@
 
     <RefreshView IsRefreshing="{Binding IsBusy}"
                  Command="{Binding Load}">
+        <Grid RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto"
+              ColumnDefinitions="1*, 4*">
+            
+            <Label Text="Start" Grid.Row="0" Grid.Column="0" />
+            <Label Text="End" Grid.Row="1" Grid.Column="0" />
+            <Label Text="Calories (total - kilocalories?)" Grid.Row="2" Grid.Column="0" />
+            <Label Text="Distance (total - meters?)" Grid.Row="3" Grid.Column="0" />
+            <Label Text="Heart Rate (avg)" Grid.Row="4" Grid.Column="0" />
+            <Label Text="Steps (total)" Grid.Row="5" Grid.Column="0" />
+
+            <DatePicker Date="{Binding Start, Converter={StaticResource DateOnly}}" Grid.Row="0" Grid.Column="1" />
+            <DatePicker Date="{Binding End, Converter={StaticResource DateOnly}}" Grid.Row="1" Grid.Column="1" />
+
+            <Label Text="{Binding Calories}" Grid.Row="2" Grid.Column="1" />  
+            <Label Text="{Binding Distance}" Grid.Row="3" Grid.Column="1" />
+            <Label Text="{Binding HeartRate}" Grid.Row="4" Grid.Column="1" />
+            <Label Text="{Binding Steps}" Grid.Row="5" Grid.Column="1" />
+        </Grid>
+        <!--
         <sv:SettingsView>
             <sv:Section Title="Filters">
                 <sv:DatePickerCell Title="Start"
@@ -26,9 +45,8 @@
                 <sv:LabelCell Title="Heart Rate (avg)" ValueText="{Binding HeartRate}" />
                 <sv:LabelCell Title="Steps (total)" ValueText="{Binding Steps}" />
             </sv:Section>
-
-
-            <!--<sv:Section Title="Monitoring" ItemsSource="{Binding Monitors}">
+            
+            <sv:Section Title="Monitoring" ItemsSource="{Binding Monitors}">
                 <sv:Section.ItemTemplate>
                     <DataTemplate x:DataType="integrations:MonitorViewModel">
                         <sv:CommandCell Title="{Binding StatusText}"
@@ -36,7 +54,8 @@
                                         Command="{Binding Toggle}" />
                     </DataTemplate>
                 </sv:Section.ItemTemplate>
-            </sv:Section>-->
+            </sv:Section>
         </sv:SettingsView>
+        -->
     </RefreshView>
 </ContentPage>
