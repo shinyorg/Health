@@ -58,11 +58,3 @@ A Provisioning Profile associated with that explicit App ID and with Health Kit 
 An Entitlements.plist with a com.apple.developer.healthkit property of type Boolean set to Yes.
 An Info.plist whose UIRequiredDeviceCapabilities key contains an entry with the String value healthkit.
 The Info.plist must also have appropriate privacy-explanation entries: a String explanation for the key NSHealthUpdateUsageDescription if the app is going to write data and a String explanation for the key NSHealthShareUsageDescription if the app is going to read Health Kit data.
-
-
-## 3rd Party Libraries
-* [Shiny .NET](https://shinylib.net)
-* [GoogleCast](https://github.com/kakone/GoogleCast)
-
-
-https://github.com/OvalMoney/react-native-fitness
