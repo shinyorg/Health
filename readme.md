@@ -50,10 +50,6 @@ public static MauiApp CreateMauiApp()
         .CreateBuilder()
         .UseShiny()
         .UseMauiApp<App>()
-        .UseShinyFramework(
-            new DryIocContainerExtension(),
-            prism => prism.OnAppStart("NavigationPage/HealthTestPage")
-        )
         .ConfigureFonts(fonts =>
         {
             fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
