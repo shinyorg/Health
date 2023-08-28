@@ -26,9 +26,7 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>XSAppIconAssets</key>
-	<string>Assets.xcassets/appicon.appiconset</string>	
-	<key>UIRequiredDeviceCapabilities</key>
-	<string>healthkithealthkit</string>
+	<string>Assets.xcassets/appicon.appiconset</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>We need to say something useful here</string>
 	<key>NSHealthShareUsageDescription</key>
