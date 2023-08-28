@@ -74,7 +74,9 @@ Add the following:
 
 ```xml
 <key>UIRequiredDeviceCapabilities</key>
-<string>healthkithealthkit</string>
+<array>
+        <string>healthkithealthkit</string>
+</array>
 <key>NSHealthUpdateUsageDescription</key>
 <string>We need to say something useful here</string>
 <key>NSHealthShareUsageDescription</key>
