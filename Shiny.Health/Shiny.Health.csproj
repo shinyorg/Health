@@ -33,7 +33,7 @@
         <None Include="..\nuget.txt" Pack="true" PackagePath="readme.txt" />
         <None Include="..\readme.md" Pack="true" PackagePath="\" />
 
-		<PackageReference Include="NerdBank.GitVersioning" Version="3.5.109" PrivateAssets="All" />
+		<PackageReference Include="NerdBank.GitVersioning" Version="3.6.133" PrivateAssets="All" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
 
@@ -41,7 +41,7 @@
         <None Include="Platforms\**\*.cs" />
         <Compile Remove="Platforms\**\*.cs" />
 
-        <PackageReference Include="Shiny.Core" Version="3.0.0-beta-0179" />
+        <PackageReference Include="Shiny.Core" Version="3.0.0-beta-0282" />
         <!--<PackageReference Include="UnitsNet" Version="5.0.0-rc004" />-->
     </ItemGroup>
 

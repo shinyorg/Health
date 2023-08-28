@@ -4,14 +4,19 @@ using Shiny.Health;
 namespace Sample;
 
 
-public class HealthTestViewModel : FuncViewModel
+public class HealthTestViewModel : ViewModel
 {
+    readonly IDeviceDisplay display;
+
+
     public HealthTestViewModel(
         BaseServices services,
         IDeviceDisplay display,
         IHealthService health
     ) : base(services)
     {
+        this.display = display;
+
         this.Load = ReactiveCommand.CreateFromTask(async () =>
         {
             var result = await health.RequestPermission(
@@ -48,35 +53,6 @@ public class HealthTestViewModel : FuncViewModel
             this.HeartRate = (await health.Query(HeartRateHealthMetric.Default, start, end, Interval.Days)).Average(x => x.Value);
         });
         this.BindBusyCommand(this.Load);
-
-        this.NavTo = async (_, _) =>
-        {
-            display.KeepScreenOn = true;
-            this.DeactivateWith.Add(Disposable.Create(() => display.KeepScreenOn = false));
-
-            this.Start = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
-            this.End = DateOnly.FromDateTime(DateTime.Now);
-
-            this.WhenAnyValue(x => x.Start)
-                .Skip(1)
-                .Subscribe(_ => this.Load.Execute(null))
-                .DisposedBy(this.DeactivateWith);
-
-            this.WhenAnyValue(x => x.End)
-                .Skip(1)
-                .Subscribe(_ => this.Load.Execute(null))
-                .DisposedBy(this.DeactivateWith);
-
-            //this.Load.Execute(null);
-            //this.Monitors = new List<MonitorViewModel>
-            //{
-            //    new MonitorViewModel("Steps (total)", health.MonitorSteps().RunningAccumulation().Select(x => x.ToString())),
-            //    new MonitorViewModel("Calories (total)", health.MonitorCalories().RunningAccumulation().Select(x => x.ToString())),
-            //    new MonitorViewModel("Distance (total)", health.MonitorDistance().RunningAccumulation().Select(x => x.ToString())),
-            //    new MonitorViewModel("Heart Rate (bpm)", health.MonitorHeartRate().Select(x => x.ToString()))
-            //};
-            //this.Monitors.ForEach(disp.Add);
-        };
     }
 
 
@@ -91,6 +67,36 @@ public class HealthTestViewModel : FuncViewModel
     [Reactive] public double HeartRate { get; private set; }
 
     //[Reactive] public List<MonitorViewModel> Monitors { get; private set; }
+
+    public override void OnAppearing()
+    {
+        base.OnAppearing();
+        display.KeepScreenOn = true;
+        this.DeactivateWith.Add(Disposable.Create(() => display.KeepScreenOn = false));
+
+        this.Start = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
+        this.End = DateOnly.FromDateTime(DateTime.Now);
+
+        this.WhenAnyValue(x => x.Start)
+            .Skip(1)
+            .Subscribe(_ => this.Load.Execute(null))
+            .DisposedBy(this.DeactivateWith);
+
+        this.WhenAnyValue(x => x.End)
+            .Skip(1)
+            .Subscribe(_ => this.Load.Execute(null))
+            .DisposedBy(this.DeactivateWith);
+
+        //this.Load.Execute(null);
+        //this.Monitors = new List<MonitorViewModel>
+        //{
+        //    new MonitorViewModel("Steps (total)", health.MonitorSteps().RunningAccumulation().Select(x => x.ToString())),
+        //    new MonitorViewModel("Calories (total)", health.MonitorCalories().RunningAccumulation().Select(x => x.ToString())),
+        //    new MonitorViewModel("Distance (total)", health.MonitorDistance().RunningAccumulation().Select(x => x.ToString())),
+        //    new MonitorViewModel("Heart Rate (bpm)", health.MonitorHeartRate().Select(x => x.ToString()))
+        //};
+        //this.Monitors.ForEach(disp.Add);
+    }
 }
 
 /*
