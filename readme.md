@@ -36,6 +36,10 @@ var heartRate = (await health.Query(HeartRateHealthMetric.Default, start, end, I
 
 ## Setup
 
+The fastest way to get going in a new application is to use our community dotnet template.  Just run
+
+> dotnet new install Shiny.Templates
+
 ### MAUI
 
 Install Shiny.Health from [![NuGet](https://img.shields.io/nuget/v/Shiny.Health.svg?maxAge=2592000)](https://www.nuget.org/packages/Shiny.Health/)
