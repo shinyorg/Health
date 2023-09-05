@@ -41,7 +41,7 @@
         <None Include="Platforms\**\*.cs" />
         <Compile Remove="Platforms\**\*.cs" />
 
-        <PackageReference Include="Shiny.Core" Version="3.0.0-beta-0282" />
+        <PackageReference Include="Shiny.Core" Version="3.0.0" />
         <!--<PackageReference Include="UnitsNet" Version="5.0.0-rc004" />-->
     </ItemGroup>
 
