@@ -1,8 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="3.0.44" Condition="$([MSBuild]::IsOSPlatform('windows'))" />
 
     <PropertyGroup>
+
         <Description>Cross Platform health data - Apple Health and Google Fit Integrations</Description>
         <TargetFrameworks>net7.0;net7.0-ios;net7.0-android</TargetFrameworks>
+
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);netstandard2.1;xamarin.ios10;monoandroid12.0</TargetFrameworks>
         <Nullable>enable</Nullable>
 
         <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
@@ -58,4 +62,6 @@
         <Compile Include="Platforms\Shared\**\*.cs" />
         <Compile Include="Platforms\iOS\**\*.cs" />
     </ItemGroup>
+
+    <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="3.0.44" Condition="$([MSBuild]::IsOSPlatform('windows'))" />
 </Project>
