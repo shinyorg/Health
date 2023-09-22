@@ -16,6 +16,7 @@ public interface IHealthService
     /// <returns></returns>
     Task<bool> IsAuthorized(params Permission[] permissions);
 
+    // TODO: I really need this to come back as a batch of approve/deny since Apple Health allows this
     /// <summary>
     /// 
     /// </summary>
