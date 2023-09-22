@@ -8,7 +8,7 @@
 
         <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);netstandard2.1;xamarin.ios10;monoandroid12.0</TargetFrameworks>
         <Nullable>enable</Nullable>
-
+        <LangVersion>latest</LangVersion>
         <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
         <Authors>Allan Ritchie</Authors>
         <Owners>aritchie; shinylib</Owners>
@@ -49,7 +49,7 @@
         <!--<PackageReference Include="UnitsNet" Version="5.0.0-rc004" />-->
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-android'">
+    <ItemGroup Condition="$(TargetFramework.Contains('android'))">
         <Compile Include="Platforms\Shared\**\*.cs" />
         <Compile Include="Platforms\Android\**\*.cs" />
 
@@ -58,10 +58,14 @@
         <!--<PackageReference Include="Google.Apis.Fitness.v1" Version="1.58.0.2454" />-->
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
+    <ItemGroup Condition="$(TargetFramework.Contains('ios'))">
         <Compile Include="Platforms\Shared\**\*.cs" />
         <Compile Include="Platforms\iOS\**\*.cs" />
     </ItemGroup>
+
+    <PropertyGroup Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('monoandroid')) OR $(TargetFramework.Contains('xamarin'))">
+        <DefineConstants>$(DefineConstants);XAMARIN</DefineConstants>
+    </PropertyGroup>
 
     <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="3.0.44" Condition="$([MSBuild]::IsOSPlatform('windows'))" />
 </Project>
