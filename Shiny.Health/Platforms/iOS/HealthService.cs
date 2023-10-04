@@ -134,7 +134,7 @@ public class HealthService : IHealthService
 
     public async Task<bool> IsAuthorized(params Permission[] permissions)
     {
-        if (!OperatingSystem.IsIOSVersionAtLeast(12))
+        if (!OperatingSystemShim.IsIOSVersionAtLeast(12))
             return false;
 
         if (!HKHealthStore.IsHealthDataAvailable)
@@ -149,7 +149,7 @@ public class HealthService : IHealthService
 
     public async Task<bool> RequestPermission(params Permission[] permissions)
     {
-        if (!OperatingSystem.IsIOSVersionAtLeast(12))
+        if (!OperatingSystemShim.IsIOSVersionAtLeast(12))
             return false;
 
         if (!HKHealthStore.IsHealthDataAvailable)

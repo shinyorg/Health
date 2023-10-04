@@ -1,11 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="3.0.44" Condition="$([MSBuild]::IsOSPlatform('windows'))" />
 
     <PropertyGroup>
-
         <Description>Cross Platform health data - Apple Health and Google Fit Integrations</Description>
         <TargetFrameworks>net7.0;net7.0-ios;net7.0-android</TargetFrameworks>
-
         <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);netstandard2.1;xamarin.ios10;monoandroid12.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -40,6 +38,14 @@
 		<PackageReference Include="NerdBank.GitVersioning" Version="3.6.133" PrivateAssets="All" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
+
+    <PropertyGroup Condition="$(TargetFramework.Contains('android'))">
+        <DefineConstants>$(DefineConstants);ANDROID</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(TargetFramework.Contains('ios'))">
+        <DefineConstants>$(DefineConstants);IOS</DefineConstants>
+    </PropertyGroup>
 
     <ItemGroup>
         <None Include="Platforms\**\*.cs" />
