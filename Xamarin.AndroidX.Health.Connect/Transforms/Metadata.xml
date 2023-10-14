@@ -1,13 +1,6 @@
 ﻿<metadata>
-	<attr path="/api/package[@name='androidx.health.services.client.impl']/class[@name='PassiveMonitoringCallbackStub']" name="managedName">PassiveMonitoringCallback</attr>
-	<attr path="/api/package[@name='androidx.health.services.client.impl']/class[@name='MeasureCallbackStub']" name="managedName">MeasureCallback</attr>
-	<!--<attr path="/api/package[@name='androidx.health.services.client.impl']/class[@name='ExerciseUpdateListenerStub']" name="managedName">ExerciseUpdateListener</attr>-->
-	<!-- Change the visibility of a class --> 
-	<attr path="/api/package[@name='androidx.health.services.client.impl.ipc']/interface[@name='Client.ServiceGetter']" name="visibility">public</attr>
-	<attr path="/api/package[@name='androidx.health.services.client.impl.ipc']/interface[@name='Client.ServiceGetter']/method[@name='getService' and count(parameter)=1 and parameter[1][@type='android.os.IBinder']]" name="visibility">public</attr>
-
-	<add-node path="/api/package[@name='androidx.health.services']">
-		<class abstract="false" deprecated="not deprecated" final="false" name="UInt32Value" static="true" visibility="public" extends="java.lang.Object" />
-		<class abstract="false" deprecated="not deprecated" final="false" name="UInt64Value" static="true" visibility="public" extends="java.lang.Object" />
+	<add-node path="/api/package[@name='androidx.health']">
+		<class abstract="false" deprecated="not deprecated" final="false" name="UInt32Value.Builder" static="true" visibility="public" extends="java.lang.Object" />
+		<class abstract="false" deprecated="not deprecated" final="false" name="UInt64Value.Builder" static="true" visibility="public" extends="java.lang.Object" />
 	</add-node>
 </metadata>
