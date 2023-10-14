@@ -7,9 +7,11 @@ using Android.App;
 using Android.Content;
 using Android.Gms.Auth.Api.SignIn;
 using Android.Gms.Common;
+using Android.Gms.Common.Apis;
 using Android.Gms.Fitness;
 using Android.Gms.Fitness.Request;
 using Java.Util.Concurrent;
+using Microsoft.Extensions.Logging;
 using Shiny.Hosting;
 
 namespace Shiny.Health;
@@ -19,8 +21,14 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
 {
     const int REQUEST_CODE = 8765;
     readonly AndroidPlatform platform;
-    public HealthService(AndroidPlatform platform)
-        => this.platform = platform;
+    readonly ILogger logger;
+
+
+    public HealthService(AndroidPlatform platform, ILogger<HealthService> logger)
+    {
+        this.platform = platform;
+        this.logger = logger;
+    }
 
     // for writing
     //var client = FitnessClass
@@ -114,6 +122,7 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
         this.permissionRequest = new();
         //using var _ = cancelToken.Register(() => this.permissionRequest.TrySetCanceled());
 
+        //<uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
         var options = this.ToFitnessOptions(permissions);
         GoogleSignIn.RequestPermissions(
             this.platform.CurrentActivity,
@@ -121,7 +130,7 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
             GoogleSignIn.GetLastSignedInAccount(this.platform.AppContext),
             options
         );
-        return this.permissionRequest.Task;        
+        return this.permissionRequest.Task;
     }
 
 
@@ -195,9 +204,43 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
     }
 
 
+    const string SIGNIN_STATUS = "googleSignInStatus";
+
+
     public void Handle(Activity activity, int requestCode, Result resultCode, Intent data)
     {
+        if (data.HasExtra(SIGNIN_STATUS))
+        {
+            var status = (Statuses)data.GetParcelableExtra(SIGNIN_STATUS, Java.Lang.Class.FromType(typeof(Statuses)))!;
+            this.logger.LogDebug("Google SignIn Status: " + status.Status.ToString());
+        }
         if (requestCode == REQUEST_CODE)
             this.permissionRequest?.TrySetResult(resultCode == Result.Ok);
+        //if (requestCode != REQUEST_CODE)
+        //    return;
+
+        //if (resultCode == Result.Ok)
+        //{
+        //    this.permissionRequest?.TrySetResult(true);
+        //}
+        //else if (data.HasExtra(SIGNIN_STATUS))
+        //{
+        //    var status = (Statuses)data.GetParcelableExtra(SIGNIN_STATUS, Java.Lang.Class.FromType(typeof(Statuses)))!;
+        //    this.logger.LogDebug("Google SignIn Status: " + status.Status.ToString());
+
+        //    switch (status.StatusCode)
+        //    {
+        //        case GoogleSignInStatusCodes.SignInCurrentlyInProgress:
+        //            break;
+
+        //        case GoogleSignInStatusCodes.Success:
+        //            this.permissionRequest?.TrySetResult(true);
+        //            break;
+
+        //        default:
+        //            this.permissionRequest?.TrySetResult(false);
+        //            break;
+        //    }
+        //}
     }
 }

@@ -97,4 +97,21 @@ Add the following:
 
 #### Google Fit
 
-[Official Android Documentation](https://developer.android.com/guide/health-and-fitness/health-connect)
+[Google Fit](http://developers.google.com/fit/android/get-started)
+
+To Test Locally:
+* You have added your SHA-1 debug key to your Project's configuration setting on Google or Firebase Account.
+* Downloaded and added google-services.json to your android project after adding the debug SHA1 key in your account.
+* Package name (on Firebase account) and Application Id (on android) must be same .. Android's package name might be different, no problems with that.
+
+
+** https://github.com/android/fit-samples/blob/main/StepCounterKotlin/app/src/main/java/com/google/android/gms/fit/samples/stepcounterkotlin/MainActivity.kt
+** https://github.com/android/fit-samples/blob/main/BasicHistoryApiKotlin/app/src/main/AndroidManifest.xml
+
+##### AndroidManifest.xml
+
+The following entry is needed for step data
+
+```xml
+<uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+```
