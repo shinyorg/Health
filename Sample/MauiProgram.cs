@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Maui;
-using Prism.DryIoc;
 
 namespace Sample;
 
@@ -12,7 +11,8 @@ public static class MauiProgram
         .UseMauiCommunityToolkit()
         .UseShinyFramework(
             new DryIocContainerExtension(),
-            prism => prism.OnAppStart("NavigationPage/HealthTestPage")
+            prism => prism.OnAppStart("NavigationPage/HealthTestPage"),
+            new(ErrorAlertType.FullError)
         )
         .ConfigureFonts(fonts =>
         {
@@ -31,7 +31,6 @@ public static class MauiProgram
         builder.Logging.AddConsole();
 #endif
         builder.Services.AddHealthIntegration();
-        builder.Services.AddGlobalCommandExceptionHandler(new(ErrorAlertType.FullError));
         return builder;
     }
 

@@ -3,8 +3,8 @@
 
     <PropertyGroup>
         <Description>Cross Platform health data - Apple Health and Google Fit Integrations</Description>
-        <TargetFrameworks>net7.0;net7.0-ios;net7.0-android</TargetFrameworks>
-        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);netstandard2.1;xamarin.ios10;monoandroid12.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net8.0-ios;net8.0-android</TargetFrameworks>
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);netstandard2.1;xamarin.ios10;monoandroid13.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
@@ -36,7 +36,7 @@
         <None Include="..\readme.md" Pack="true" PackagePath="\" />
 
 		<PackageReference Include="NerdBank.GitVersioning" Version="3.6.133" PrivateAssets="All" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <PropertyGroup Condition="$(TargetFramework.Contains('android'))">
@@ -51,7 +51,7 @@
         <None Include="Platforms\**\*.cs" />
         <Compile Remove="Platforms\**\*.cs" />
 
-        <PackageReference Include="Shiny.Core" Version="3.0.1" />
+        <PackageReference Include="Shiny.Core" Version="3.2.0-beta-0019" />
         <!--<PackageReference Include="UnitsNet" Version="5.0.0-rc004" />-->
     </ItemGroup>
 
@@ -59,9 +59,9 @@
         <Compile Include="Platforms\Shared\**\*.cs" />
         <Compile Include="Platforms\Android\**\*.cs" />
 
-        <PackageReference Include="Xamarin.GooglePlayServices.Auth" Version="120.3.0" />
-        <PackageReference Include="Xamarin.GooglePlayServices.Fitness" Version="121.1.0.1" />
-        <!--<PackageReference Include="Google.Apis.Fitness.v1" Version="1.58.0.2454" />-->
+        <!--<ProjectReference Include="..\Xamarin.AndroidX.Health.Connect\Xamarin.AndroidX.Health.Connect.csproj" />-->
+        <PackageReference Include="Xamarin.GooglePlayServices.Auth" Version="120.7.0.1" />
+        <PackageReference Include="Xamarin.GooglePlayServices.Fitness" Version="121.1.0.6" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetFramework.Contains('ios'))">

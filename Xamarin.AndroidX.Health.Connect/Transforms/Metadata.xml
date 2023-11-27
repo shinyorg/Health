@@ -1,6 +1,9 @@
 ﻿<metadata>
-	<add-node path="/api/package[@name='androidx.health']">
-		<class abstract="false" deprecated="not deprecated" final="false" name="UInt32Value.Builder" static="true" visibility="public" extends="java.lang.Object" />
-		<class abstract="false" deprecated="not deprecated" final="false" name="UInt64Value.Builder" static="true" visibility="public" extends="java.lang.Object" />
-	</add-node>
+	<attr path="/api/package[starts-with(@name, 'androidx.health')]" name="managedName">Xamarin.AndroidX.Health</attr>
+
+	<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.impl.data')]" />
+	<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.impl.sdkservice')]" />
+	<!--<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.proto')]" />-->
+	<attr path="/api/package[@name='androidx.health']/class[@name='Length']" name="visibility">public</attr>
+	<attr path="/api/package[@name='androidx.health.platform.client.impl.ipc']/interface[@name='Client.ServiceGetter']" name="visibility">public</attr>
 </metadata>

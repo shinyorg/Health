@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<!--<TargetFrameworks>$(TargetFrameworks);net7.0-ios</TargetFrameworks>-->
-		<TargetFrameworks>$(TargetFrameworks);net7.0-android</TargetFrameworks>
+		<!--<TargetFrameworks>$(TargetFrameworks);net8.0-ios</TargetFrameworks>-->
+		<TargetFrameworks>$(TargetFrameworks);net8.0-android</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>Sample</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -41,11 +41,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CommunityToolkit.Maui" Version="6.0.0" />
-		<PackageReference Include="Prism.DryIoc.Maui" Version="8.1.273-pre" />
+		<PackageReference Include="CommunityToolkit.Maui" Version="7.0.0" />
+		<PackageReference Include="Prism.DryIoc.Maui" Version="9.0.271-pre" />
 		<PackageReference Include="ReactiveUI.Fody" Version="19.5.1" />
-		<PackageReference Include="Shiny.Framework" Version="3.0.0-beta-0012" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
+		<PackageReference Include="Shiny.Framework" Version="4.0.0-beta-0013" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     </ItemGroup>
 
 	<ItemGroup>
