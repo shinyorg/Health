@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
@@ -11,23 +10,20 @@ using Android.Gms.Common.Apis;
 using Android.Gms.Fitness;
 using Android.Gms.Fitness.Request;
 using Java.Util.Concurrent;
-using Microsoft.Extensions.Logging;
 using Shiny.Hosting;
 
 namespace Shiny.Health;
 
 
-public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
+public class HealthService : IHealthService //, IAndroidLifecycle.IOnActivityResult
 {
     const int REQUEST_CODE = 8765;
     readonly AndroidPlatform platform;
-    readonly ILogger logger;
 
 
-    public HealthService(AndroidPlatform platform, ILogger<HealthService> logger)
+    public HealthService(AndroidPlatform platform)
     {
         this.platform = platform;
-        this.logger = logger;
     }
 
     // for writing
@@ -37,33 +33,33 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
     //     GoogleSignIn.GetLastSignedInAccount(act)
     // );
 
-    public IObservable<T> Monitor<T>(HealthMetric<T> metric) => Observable.Create<T>(ob =>
-    {
-        var act = this.platform.CurrentActivity;
-        var listener = new DataPointListener(dp =>
-        {
-            var value = metric.FromNative(dp);
-            ob.OnNext(value);
-        });
+    //public IObservable<T> Monitor<T>(HealthMetric<T> metric) => Observable.Create<T>(ob =>
+    //{
+    //    var act = this.platform.CurrentActivity;
+    //    var listener = new DataPointListener(dp =>
+    //    {
+    //        var value = metric.FromNative(dp);
+    //        ob.OnNext(value);
+    //    });
 
-        var client = FitnessClass.GetSensorsClient(act, GoogleSignIn.GetLastSignedInAccount(act));
+    //    var client = FitnessClass.GetSensorsClient(act, GoogleSignIn.GetLastSignedInAccount(act));
 
-        client
-            .AddAsync(
-                new SensorRequest.Builder()
-                    .SetDataType(metric.DataType)
-                    .SetSamplingRate(10, TimeUnit.Seconds)
-                    .Build(),
-                listener
-            )
-            .ContinueWith(x =>
-            {
-                if (x.Exception != null)
-                    ob.OnError(x.Exception);
-            });
+    //    client
+    //        .AddAsync(
+    //            new SensorRequest.Builder()
+    //                .SetDataType(metric.DataType)
+    //                .SetSamplingRate(10, TimeUnit.Seconds)
+    //                .Build(),
+    //            listener
+    //        )
+    //        .ContinueWith(x =>
+    //        {
+    //            if (x.Exception != null)
+    //                ob.OnError(x.Exception);
+    //        });
 
-        return () => client.Remove(listener);
-    });
+    //    return () => client.Remove(listener);
+    //});
 
 
     public async Task<IEnumerable<HealthResult<T>>> Query<T>(
@@ -112,6 +108,108 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
     public Task<bool> IsAuthorized(params Permission[] permissions)
         => Task.FromResult(this.IsAuthorizedInternal(permissions));
 
+
+    void Google()
+    {
+        var apiClient = new GoogleApiClient.Builder(this.platform.CurrentActivity)
+            .AddApi(FitnessClass.SENSORS_API)
+            .UseDefaultAccount()
+            .AddScope(FitnessClass.ScopeActivityRead)
+            .AddConnectionCallbacks(bundle =>
+            {
+                //if (data.HasExtra(SIGNIN_STATUS))
+                //{
+                //    var status = (Statuses)data.GetParcelableExtra(SIGNIN_STATUS, Java.Lang.Class.FromType(typeof(Statuses)))!;
+                //    switch (status.StatusCode)
+                //    {
+                //        case GoogleSignInStatusCodes.SignInCurrentlyInProgress:
+                //        case GoogleSignInStatusCodes.Success:
+                //            break;
+
+                //        default:
+                //            this.permissionRequest?.TrySetException(new InvalidOperationException("Google Fit Setup Issue: " + status));
+                //            break;
+                //    }
+                //}
+                //if (requestCode == REQUEST_CODE)
+                //    this.permissionRequest?.TrySetResult(resultCode == Result.Ok);
+            })
+            .AddOnConnectionFailedListener(result =>
+            {
+
+            })
+            //.AddScope(FitnessClass.ScopeActivityReadWrite) 
+            .Build();
+
+        apiClient.Connect();
+
+        //.AddConnectionCallbacks()
+    }
+        /*
+        public class MyActivity extends FragmentActivity
+                     implements ConnectionCallbacks, OnConnectionFailedListener, OnDataPointListener {
+                private static final int REQUEST_OAUTH = 1001;
+                private GoogleApiClient mGoogleApiClient;
+
+                @Override
+                protected void onCreate(@Nullable Bundle savedInstanceState) {
+                    super.onCreate(savedInstanceState);
+
+                    // Create a Google Fit Client instance with default user account.
+                    mGoogleApiClient = new GoogleApiClient.Builder(this)
+                            .addApi(Fitness.SENSORS_API)  // Required for SensorsApi calls
+                            // Optional: specify more APIs used with additional calls to addApi
+                            .useDefaultAccount()
+                            .addScope(Fitness.SCOPE_ACTIVITY_READ_WRITE)
+                            .addConnectionCallbacks(this)
+                            .addOnConnectionFailedListener(this)
+                            .build();
+
+                    mGoogleApiClient.connect();
+                }
+
+                @Override
+                public void onConnected(Bundle connectionHint) {
+                    // Connected to Google Fit Client.
+                    Fitness.SensorsApi.add(
+                            mGoogleApiClient,
+                            new SensorRequest.Builder()
+                                    .setDataType(DataType.STEP_COUNT_DELTA)
+                                    .build(),
+                            this);
+                }
+
+                @Override
+                public void onDataPoint(DataPoint dataPoint) {
+                    // Do cool stuff that matters.
+                }
+
+                @Override
+                public void onConnectionSuspended(int cause) {
+                    // The connection has been interrupted. Wait until onConnected() is called.
+                }
+
+                @Override
+                public void onConnectionFailed(ConnectionResult result) {
+                    // Error while connecting. Try to resolve using the pending intent returned.
+                    if (result.getErrorCode() == FitnessStatusCodes.NEEDS_OAUTH_PERMISSIONS) {
+                        try {
+                            result.startResolutionForResult(this, REQUEST_OAUTH);
+                        } catch (SendIntentException e) {
+                        }
+                    }
+                }
+
+                @Override
+                public void onActivityResult(int requestCode, int resultCode, Intent data) {
+                    if (requestCode == REQUEST_OAUTH && resultCode == RESULT_OK) {
+                        mGoogleApiClient.connect();
+                    }
+                } 
+         */
+        //        .useDefaultAccount()
+        //.addScope(Fitness.SCOPE_ACTIVITY_READ_WRITE)
+   
 
     TaskCompletionSource<bool>? permissionRequest;
     public Task<bool> RequestPermission(params Permission[] permissions)
@@ -207,40 +305,28 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
     const string SIGNIN_STATUS = "googleSignInStatus";
 
 
-    public void Handle(Activity activity, int requestCode, Result resultCode, Intent data)
+    //public void Handle(Activity activity, int requestCode, Result resultCode, Intent data)
+    //{
+    //    if (data.HasExtra(SIGNIN_STATUS))
+    //    {
+    //        var status = (Statuses)data.GetParcelableExtra(SIGNIN_STATUS, Java.Lang.Class.FromType(typeof(Statuses)))!;
+    //        switch (status.StatusCode)
+    //        {
+    //            case GoogleSignInStatusCodes.SignInCurrentlyInProgress:
+    //            case GoogleSignInStatusCodes.Success:
+    //                break;
+
+    //            default:
+    //                this.permissionRequest?.TrySetException(new InvalidOperationException("Google Fit Setup Issue: " + status));
+    //                break;
+    //        }
+    //    }
+    //    if (requestCode == REQUEST_CODE)
+    //        this.permissionRequest?.TrySetResult(resultCode == Result.Ok);
+    //}
+
+    public AccessState GetCurrentStatus(Permission permission)
     {
-        if (data.HasExtra(SIGNIN_STATUS))
-        {
-            var status = (Statuses)data.GetParcelableExtra(SIGNIN_STATUS, Java.Lang.Class.FromType(typeof(Statuses)))!;
-            this.logger.LogDebug("Google SignIn Status: " + status.Status.ToString());
-        }
-        if (requestCode == REQUEST_CODE)
-            this.permissionRequest?.TrySetResult(resultCode == Result.Ok);
-        //if (requestCode != REQUEST_CODE)
-        //    return;
-
-        //if (resultCode == Result.Ok)
-        //{
-        //    this.permissionRequest?.TrySetResult(true);
-        //}
-        //else if (data.HasExtra(SIGNIN_STATUS))
-        //{
-        //    var status = (Statuses)data.GetParcelableExtra(SIGNIN_STATUS, Java.Lang.Class.FromType(typeof(Statuses)))!;
-        //    this.logger.LogDebug("Google SignIn Status: " + status.Status.ToString());
-
-        //    switch (status.StatusCode)
-        //    {
-        //        case GoogleSignInStatusCodes.SignInCurrentlyInProgress:
-        //            break;
-
-        //        case GoogleSignInStatusCodes.Success:
-        //            this.permissionRequest?.TrySetResult(true);
-        //            break;
-
-        //        default:
-        //            this.permissionRequest?.TrySetResult(false);
-        //            break;
-        //    }
-        //}
+        throw new NotImplementedException();
     }
 }

@@ -1,63 +1,59 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventKit;
 using Foundation;
 using HealthKit;
-using Microsoft.Extensions.Options;
 
 namespace Shiny.Health;
 
 
 public class HealthService : IHealthService
 {
-    public IObservable<T> Monitor<T>(HealthMetric<T> metric) => Observable.Create<T>(ob =>
-    {
-        var predicate = HKQuery.GetPredicateForSamples(NSDate.Now, null, HKQueryOptions.None);
-        var qty = HKQuantityType.Create(metric.QuantityTypeIdentifier)!;
+    //public IObservable<T> Monitor<T>(HealthMetric<T> metric) => Observable.Create<T>(ob =>
+    //{
+    //    var predicate = HKQuery.GetPredicateForSamples(NSDate.Now, null, HKQueryOptions.None);
+    //    var qty = HKQuantityType.Create(metric.QuantityTypeIdentifier)!;
 
-        var query = new HKAnchoredObjectQuery(
-            qty,
-            predicate,
-            null,
-            0,
-            new HKAnchoredObjectUpdateHandler((qry, sample, deleted, anchor, e) =>
-            {
-                if (e != null)
-                {
+    //    var query = new HKAnchoredObjectQuery(
+    //        qty,
+    //        predicate,
+    //        null,
+    //        0,
+    //        new HKAnchoredObjectUpdateHandler((qry, sample, deleted, anchor, e) =>
+    //        {
+    //            if (e != null)
+    //            {
 
-                }
-                else
-                {
-                    foreach (var s in sample)
-                    {
-                        if (s is HKQuantitySample qtys)
-                        {
-                            //var value = metric.FromNative(qtys);
-                            //ob.OnNext(null)
-                        }
-                    }
-                }
-                //.Quantity.GetDoubleValue
-                //sample[0].Source;
-                //sample[0].SourceRevision
-                //sample[0].Uuid
-                //sample[0].StartDate
-                //sample[0].EndDate
-            })
-        );
-        var store = new HKHealthStore();
-        store.ExecuteQuery(query);
+    //            }
+    //            else
+    //            {
+    //                foreach (var s in sample)
+    //                {
+    //                    if (s is HKQuantitySample qtys)
+    //                    {
+    //                        //var value = metric.FromNative(qtys);
+    //                        //ob.OnNext(null)
+    //                    }
+    //                }
+    //            }
+    //            //.Quantity.GetDoubleValue
+    //            //sample[0].Source;
+    //            //sample[0].SourceRevision
+    //            //sample[0].Uuid
+    //            //sample[0].StartDate
+    //            //sample[0].EndDate
+    //        })
+    //    );
+    //    var store = new HKHealthStore();
+    //    store.ExecuteQuery(query);
 
-        return () =>
-        {
-            store.StopQuery(query);
-            store.Dispose();
-        };
-    });
+    //    return () =>
+    //    {
+    //        store.StopQuery(query);
+    //        store.Dispose();
+    //    };
+    //});
 
 
     public async Task<IEnumerable<HealthResult<T>>> Query<T>(HealthMetric<T> metric, DateTimeOffset start, DateTimeOffset end, Interval interval = Interval.Days, CancellationToken cancellationToken = default)
@@ -119,7 +115,6 @@ public class HealthService : IHealthService
         };
 
         using var store = new HKHealthStore();
-
         using var ct = cancellationToken.Register(() =>
         {
             tcs.TrySetCanceled();
@@ -142,7 +137,9 @@ public class HealthService : IHealthService
 
         var perms = ToSets(permissions);
         using var store = new HKHealthStore();
+        
         var result = await store.GetRequestStatusForAuthorizationToShareAsync(perms.Share, perms.Read);
+        //result == HKAuthorizationRequestStatus.ShouldRequest
         return result == HKAuthorizationRequestStatus.Unnecessary;
     }
 
@@ -185,6 +182,28 @@ public class HealthService : IHealthService
             new NSSet<HKSampleType>(share.ToArray()),
             new NSSet<HKObjectType>(read.ToArray())
         );
+    }
+
+
+    // TODO: read
+    public AccessState GetCurrentStatus(Permission permission)
+    {
+        if (!OperatingSystemShim.IsIOSVersionAtLeast(12))
+            return AccessState.NotSupported;
+
+        if (!HKHealthStore.IsHealthDataAvailable)
+            return AccessState.NotSupported;
+
+        using var store = new HKHealthStore();
+        var type = HKQuantityType.Create(permission.Metric.QuantityTypeIdentifier)!;
+        var status = store.GetAuthorizationStatus(type);
+
+        return status switch
+        {
+            HKAuthorizationStatus.NotDetermined => AccessState.Unknown,
+            HKAuthorizationStatus.SharingDenied => AccessState.Denied,
+            HKAuthorizationStatus.SharingAuthorized => AccessState.Available
+        };
     }
 }
 

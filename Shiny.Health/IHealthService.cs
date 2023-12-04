@@ -11,7 +11,13 @@ public interface IHealthService
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="cancelToken"></param>
+    /// <param name="permission"></param>
+    /// <returns></returns>
+    AccessState GetCurrentStatus(Permission permission);
+
+    /// <summary>
+    /// 
+    /// </summary>
     /// <param name="permissions"></param>
     /// <returns></returns>
     Task<bool> IsAuthorized(params Permission[] permissions);
@@ -20,7 +26,6 @@ public interface IHealthService
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="cancelToken"></param>
     /// <param name="permissions"></param>
     /// <returns></returns>
     Task<bool> RequestPermission(params Permission[] permissions);
@@ -48,5 +53,5 @@ public interface IHealthService
     /// <typeparam name="T"></typeparam>
     /// <param name="metric"></param>
     /// <returns></returns>
-    IObservable<T> Monitor<T>(HealthMetric<T> metric);
+    //IObservable<T> Monitor<T>(HealthMetric<T> metric);
 }

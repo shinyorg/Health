@@ -54,7 +54,7 @@ public class HealthTestViewModel : ViewModel
     [Reactive] public DateTimeOffset Start { get; set; }
     [Reactive] public DateTimeOffset End { get; set; }
 
-    [Reactive] public string ErrorText { get; private set; }
+    [Reactive] public string? ErrorText { get; private set; }
     [Reactive] public int Steps { get; private set; }
     [Reactive] public double Calories { get; private set; }
     [Reactive] public double Distance { get; private set; }

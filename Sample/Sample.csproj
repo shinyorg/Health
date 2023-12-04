@@ -46,6 +46,11 @@
 		<PackageReference Include="ReactiveUI.Fody" Version="19.5.1" />
 		<PackageReference Include="Shiny.Framework" Version="4.0.0-beta-0013" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.3" />
+    </ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
+		<GoogleServicesJson Include="Platforms\Android\google-services.json" />
     </ItemGroup>
 
 	<ItemGroup>

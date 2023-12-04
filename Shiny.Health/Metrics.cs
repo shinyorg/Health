@@ -120,169 +120,169 @@ public class StepCountHealthMetric : HealthMetric<int>
 }
 
 
-public class SleepAnalysisHealthMetric : HealthMetric<object>
-{
-#if ANDROID
-    public override DataType AggregationDataType => throw new NotImplementedException();
-    public override DataType DataType => throw new NotImplementedException();
+//public class SleepAnalysisHealthMetric : HealthMetric<object>
+////{
+//#if ANDROID
+//    public override DataType AggregationDataType => throw new NotImplementedException();
+//    public override DataType DataType => throw new NotImplementedException();
 
-    public override object FromNative(DataPoint dataPoint)
-    {
-        throw new NotImplementedException();
-    }
-    //    @RequiresApi(api = Build.VERSION_CODES.N)
-    //    public void getSleepAnalysis(Context context, double startDate, double endDate, final Promise promise)
-    //    {
-    //        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N)
-    //        {
-    //            promise.reject(String.valueOf(FitnessError.ERROR_METHOD_NOT_AVAILABLE), "Method not available");
-    //            return;
-    //        }
+//    public override object FromNative(DataPoint dataPoint)
+//    {
+//        throw new NotImplementedException();
+//    }
+//    //    @RequiresApi(api = Build.VERSION_CODES.N)
+//    //    public void getSleepAnalysis(Context context, double startDate, double endDate, final Promise promise)
+//    //    {
+//    //        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N)
+//    //        {
+//    //            promise.reject(String.valueOf(FitnessError.ERROR_METHOD_NOT_AVAILABLE), "Method not available");
+//    //            return;
+//    //        }
 
-    //        SessionReadRequest request = new SessionReadRequest.Builder()
-    //                .readSessionsFromAllApps()
-    //                .read(DataType.TYPE_ACTIVITY_SEGMENT)
-    //                .setTimeInterval((long)startDate, (long)endDate, TimeUnit.MILLISECONDS)
-    //                .build();
+//    //        SessionReadRequest request = new SessionReadRequest.Builder()
+//    //                .readSessionsFromAllApps()
+//    //                .read(DataType.TYPE_ACTIVITY_SEGMENT)
+//    //                .setTimeInterval((long)startDate, (long)endDate, TimeUnit.MILLISECONDS)
+//    //                .build();
 
-    //        Fitness.getSessionsClient(context, GoogleSignIn.getLastSignedInAccount(context))
-    //                .readSession(request)
-    //                .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
-    //                    @Override
-    //                    public void onSuccess(SessionReadResponse response)
-    //        {
-    //            List<Object> sleepSessions = response.getSessions()
-    //                .stream()
-    //                .filter(new Predicate<Session>() {
-    //                                @Override
-    //                                public boolean test(Session s)
-    //            {
-    //                return s.getActivity().equals(FitnessActivities.SLEEP);
-    //            }
-    //        })
-    //                            .collect(Collectors.toList());
+//    //        Fitness.getSessionsClient(context, GoogleSignIn.getLastSignedInAccount(context))
+//    //                .readSession(request)
+//    //                .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
+//    //                    @Override
+//    //                    public void onSuccess(SessionReadResponse response)
+//    //        {
+//    //            List<Object> sleepSessions = response.getSessions()
+//    //                .stream()
+//    //                .filter(new Predicate<Session>() {
+//    //                                @Override
+//    //                                public boolean test(Session s)
+//    //            {
+//    //                return s.getActivity().equals(FitnessActivities.SLEEP);
+//    //            }
+//    //        })
+//    //                            .collect(Collectors.toList());
 
-    //        WritableArray sleep = Arguments.createArray();
-    //        for (Object session : sleepSessions)
-    //        {
-    //            List<DataSet> dataSets = response.getDataSet((Session)session);
-    //            for (DataSet dataSet : dataSets)
-    //            {
-    //                processSleep(dataSet, (Session)session, sleep);
-    //            }
-    //        }
+//    //        WritableArray sleep = Arguments.createArray();
+//    //        for (Object session : sleepSessions)
+//    //        {
+//    //            List<DataSet> dataSets = response.getDataSet((Session)session);
+//    //            for (DataSet dataSet : dataSets)
+//    //            {
+//    //                processSleep(dataSet, (Session)session, sleep);
+//    //            }
+//    //        }
 
-    //        promise.resolve(sleep);
-    //    }
-    //})
-    //                .addOnFailureListener(new OnFailureListener()
-    //{
-    //    @Override
-    //                    public void onFailure(@NonNull Exception e)
-    //    {
-    //        promise.reject(e);
-    //    }
-    //});
-    //    }
+//    //        promise.resolve(sleep);
+//    //    }
+//    //})
+//    //                .addOnFailureListener(new OnFailureListener()
+//    //{
+//    //    @Override
+//    //                    public void onFailure(@NonNull Exception e)
+//    //    {
+//    //        promise.reject(e);
+//    //    }
+//    //});
+//    //    }
 
-    //private void processSleep(DataSet dataSet, Session session, WritableArray map)
-    //{
+//    //private void processSleep(DataSet dataSet, Session session, WritableArray map)
+//    //{
 
-    //    for (DataPoint dp : dataSet.getDataPoints())
-    //    {
-    //        for (Field field : dp.getDataType().getFields())
-    //        {
-    //            WritableMap sleepMap = Arguments.createMap();
-    //            sleepMap.putString("value", dp.getValue(field).asActivity());
-    //            sleepMap.putString("sourceId", session.getIdentifier());
-    //            sleepMap.putString("startDate", dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
-    //            sleepMap.putString("endDate", dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
-    //            map.pushMap(sleepMap);
-    //        }
-    //    }
-    //}
-#endif
+//    //    for (DataPoint dp : dataSet.getDataPoints())
+//    //    {
+//    //        for (Field field : dp.getDataType().getFields())
+//    //        {
+//    //            WritableMap sleepMap = Arguments.createMap();
+//    //            sleepMap.putString("value", dp.getValue(field).asActivity());
+//    //            sleepMap.putString("sourceId", session.getIdentifier());
+//    //            sleepMap.putString("startDate", dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
+//    //            sleepMap.putString("endDate", dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
+//    //            map.pushMap(sleepMap);
+//    //        }
+//    //    }
+//    //}
+//#endif
 
-#if IOS
-    public override HKQuantityTypeIdentifier QuantityTypeIdentifier => throw new NotImplementedException();
+//#if IOS
+//    public override HKQuantityTypeIdentifier QuantityTypeIdentifier => throw new NotImplementedException();
 
-    public override HKStatisticsOptions StatisticsOptions => throw new NotImplementedException();
+//    public override HKStatisticsOptions StatisticsOptions => throw new NotImplementedException();
 
-    public override object FromNative(HKStatistics result)
-    {
-        throw new NotImplementedException();
-    }
+//    public override object FromNative(HKStatistics result)
+//    {
+//        throw new NotImplementedException();
+//    }
 
-    //RCT_REMAP_METHOD(getSleepAnalysis,
-    //                 withStartDate: (double) startDate
+//    //RCT_REMAP_METHOD(getSleepAnalysis,
+//    //                 withStartDate: (double) startDate
 
-    //                 andEndDate: (double) endDate
+//    //                 andEndDate: (double) endDate
 
-    //                 withSleepAnalysisResolver:(RCTPromiseResolveBlock) resolve
+//    //                 withSleepAnalysisResolver:(RCTPromiseResolveBlock) resolve
 
-    //                 andSleepAnalysisRejecter:(RCTPromiseRejectBlock) reject)
-    //{
+//    //                 andSleepAnalysisRejecter:(RCTPromiseRejectBlock) reject)
+//    //{
 
-    //    if (!startDate)
-    //    {
-    //        NSError* error = [RCTFitness createErrorWithCode: ErrorDateNotCorrect andDescription: RCT_ERROR_DATE_NOT_CORRECT];
-    //        [RCTFitness handleRejectBlock:reject error:error] ;
-    //        return;
-    //    }
+//    //    if (!startDate)
+//    //    {
+//    //        NSError* error = [RCTFitness createErrorWithCode: ErrorDateNotCorrect andDescription: RCT_ERROR_DATE_NOT_CORRECT];
+//    //        [RCTFitness handleRejectBlock:reject error:error] ;
+//    //        return;
+//    //    }
 
-    //    NSDate* sd = [RCTFitness dateFromTimeStamp: startDate / 1000];
-    //    NSDate* ed = [RCTFitness dateFromTimeStamp: endDate / 1000];
+//    //    NSDate* sd = [RCTFitness dateFromTimeStamp: startDate / 1000];
+//    //    NSDate* ed = [RCTFitness dateFromTimeStamp: endDate / 1000];
 
-    //    HKSampleType* sampleType = [HKSampleType categoryTypeForIdentifier: HKCategoryTypeIdentifierSleepAnalysis];
-    //    NSPredicate* predicate = [HKQuery predicateForSamplesWithStartDate: sd endDate: ed options: HKQueryOptionNone];
+//    //    HKSampleType* sampleType = [HKSampleType categoryTypeForIdentifier: HKCategoryTypeIdentifierSleepAnalysis];
+//    //    NSPredicate* predicate = [HKQuery predicateForSamplesWithStartDate: sd endDate: ed options: HKQueryOptionNone];
 
-    //    HKSampleQuery* query = [[HKSampleQuery alloc] initWithSampleType: sampleType predicate:predicate limit:0 sortDescriptors: nil resultsHandler:^(HKSampleQuery * query, NSArray * results, NSError * error) {
-    //        if (error)
-    //        {
-    //            NSError* error = [RCTFitness createErrorWithCode: ErrorNoEvents andDescription: RCT_ERROR_NO_EVENTS];
-    //            [RCTFitness handleRejectBlock:reject error:error] ;
-    //            return;
-    //        }
+//    //    HKSampleQuery* query = [[HKSampleQuery alloc] initWithSampleType: sampleType predicate:predicate limit:0 sortDescriptors: nil resultsHandler:^(HKSampleQuery * query, NSArray * results, NSError * error) {
+//    //        if (error)
+//    //        {
+//    //            NSError* error = [RCTFitness createErrorWithCode: ErrorNoEvents andDescription: RCT_ERROR_NO_EVENTS];
+//    //            [RCTFitness handleRejectBlock:reject error:error] ;
+//    //            return;
+//    //        }
 
-    //        NSMutableArray* data = [NSMutableArray arrayWithCapacity: 1];
+//    //        NSMutableArray* data = [NSMutableArray arrayWithCapacity: 1];
 
-    //    for (HKCategorySample* sample in results)
-    //        {
-    //            NSString* startDateString = [RCTFitness ISO8601StringFromDate: sample.startDate];
-    //            NSString* endDateString = [RCTFitness ISO8601StringFromDate: sample.endDate];
+//    //    for (HKCategorySample* sample in results)
+//    //        {
+//    //            NSString* startDateString = [RCTFitness ISO8601StringFromDate: sample.startDate];
+//    //            NSString* endDateString = [RCTFitness ISO8601StringFromDate: sample.endDate];
 
-    //            NSString* valueString;
+//    //            NSString* valueString;
 
-    //            switch (sample.value)
-    //            {
-    //                case HKCategoryValueSleepAnalysisInBed:
-    //                    valueString = @"INBED";
-    //                    break;
-    //                case HKCategoryValueSleepAnalysisAsleep:
-    //                    valueString = @"ASLEEP";
-    //                    break;
-    //                default:
-    //                    valueString = @"UNKNOWN";
-    //                    break;
-    //            }
+//    //            switch (sample.value)
+//    //            {
+//    //                case HKCategoryValueSleepAnalysisInBed:
+//    //                    valueString = @"INBED";
+//    //                    break;
+//    //                case HKCategoryValueSleepAnalysisAsleep:
+//    //                    valueString = @"ASLEEP";
+//    //                    break;
+//    //                default:
+//    //                    valueString = @"UNKNOWN";
+//    //                    break;
+//    //            }
 
-    //            NSDictionary* elem = @{
-    //                @"value" : valueString,
-    //                @"sourceName" : [[[sample sourceRevision] source] name],
-    //                @"sourceId" : [[[sample sourceRevision] source] bundleIdentifier],
-    //                @"startDate" : startDateString,
-    //                @"endDate" : endDateString,
-    //        };
+//    //            NSDictionary* elem = @{
+//    //                @"value" : valueString,
+//    //                @"sourceName" : [[[sample sourceRevision] source] name],
+//    //                @"sourceId" : [[[sample sourceRevision] source] bundleIdentifier],
+//    //                @"startDate" : startDateString,
+//    //                @"endDate" : endDateString,
+//    //        };
 
-    //            [data addObject:elem] ;
-    //        }
+//    //            [data addObject:elem] ;
+//    //        }
 
-    //        dispatch_async(dispatch_get_main_queue(), ^{
-    //            resolve(data);
-    //        });
-    //    }];
+//    //        dispatch_async(dispatch_get_main_queue(), ^{
+//    //            resolve(data);
+//    //        });
+//    //    }];
 
-    //    [self.healthStore executeQuery:query] ;
-    //}
-#endif
-}
+//    //    [self.healthStore executeQuery:query] ;
+//    //}
+//#endif
+//}

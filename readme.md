@@ -95,18 +95,35 @@ Add the following:
 <true />
 ```
 
-#### Google Fit
+### Google Fit
 
 [Google Fit](http://developers.google.com/fit/android/get-started)
 
 To Test Locally:
-* You have added your SHA-1 debug key to your Project's configuration setting on Google or Firebase Account.
+* You have added your x to your Project's configuration setting on Google or Firebase Account.
 * Downloaded and added google-services.json to your android project after adding the debug SHA1 key in your account.
 * Package name (on Firebase account) and Application Id (on android) must be same .. Android's package name might be different, no problems with that.
 
-
 ** https://github.com/android/fit-samples/blob/main/StepCounterKotlin/app/src/main/java/com/google/android/gms/fit/samples/stepcounterkotlin/MainActivity.kt
 ** https://github.com/android/fit-samples/blob/main/BasicHistoryApiKotlin/app/src/main/AndroidManifest.xml
+
+##### Setup
+
+1. Sign Up at https://console.cloud.google.com/apis/dashboard
+2. Under "Enabled APIs and services", search for "Fitness API"
+3. After selecting "Fitness API" - enable the service
+4. Now go to Firebase and add your project created in step 1
+5. When creating your app, you need to ensure that your android app package name matches between firebase, cloud console, & androidmanifest.xml
+6. You will need to add your debug SHA-1 debug key using
+    > keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore
+    > Password is 'android'
+7. Download the google-services.json
+8. Copy/paste file into your MAUI app at Platforms/Android and alter your csproj to the following
+```xml
+<ItemGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
+	<GoogleServicesJson Include="Platforms\Android\google-services.json" />
+</ItemGroup>
+```
 
 ##### AndroidManifest.xml
 
