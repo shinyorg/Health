@@ -1,5 +1,4 @@
 ﻿#if IOS || ANDROID
-using System;
 using Microsoft.Extensions.DependencyInjection;
 using Shiny.Health;
 

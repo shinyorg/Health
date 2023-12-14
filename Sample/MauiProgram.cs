@@ -38,6 +38,7 @@ public static class MauiProgram
     static MauiAppBuilder RegisterViews(this MauiAppBuilder builder)
     {
         builder.Services.RegisterForNavigation<HealthTestPage, HealthTestViewModel>();
+        builder.Services.RegisterForNavigation<ListPage, ListViewModel>();
         return builder;
     }
 }

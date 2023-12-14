@@ -39,16 +39,24 @@
                 <TableRoot>
                     <TableSection>
                         <TextCell Text="Calories (total - kilocalories)"
-                                  Detail="{Binding Calories}" />
+                                  Detail="{Binding Calories}"
+                                  Command="{Binding NavToList}"
+                                  CommandParameter="Calories" />
 
                         <TextCell Text="Distance (total - meters)"
-                                  Detail="{Binding Distance}" />
+                                  Detail="{Binding Distance}"
+                                  Command="{Binding NavToList}"
+                                  CommandParameter="Distance" />
 
                         <TextCell Text="Heart Rate (avg)"
-                                  Detail="{Binding HeartRate}" />
+                                  Detail="{Binding HeartRate}"
+                                  Command="{Binding NavToList}"
+                                  CommandParameter="HeartRate" />
 
                         <TextCell Text="Steps (total)"
-                                  Detail="{Binding Steps}" />
+                                  Detail="{Binding Steps}"
+                                  Command="{Binding NavToList}"
+                                  CommandParameter="StepCount" />
                     </TableSection>
                 </TableRoot>
             </TableView>
