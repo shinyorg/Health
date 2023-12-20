@@ -11,6 +11,7 @@ using Android.Gms.Common.Apis;
 using Android.Gms.Fitness;
 using Android.Gms.Fitness.Data;
 using Android.Gms.Fitness.Request;
+using Android.Health.Connect;
 using Java.Util.Concurrent;
 using Shiny.Hosting;
 using NativeDataType = Android.Gms.Fitness.Data.DataType;
@@ -27,6 +28,7 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
     public HealthService(AndroidPlatform platform)
     {
         this.platform = platform;
+        //var m = Android.Health.Connect.HealthConnectManager.;
     }
 
 
@@ -97,8 +99,8 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
     TaskCompletionSource<bool>? permissionRequest;
     public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
     {
-        if (this.IsAuthorizedInternal(dataTypes))
-            return dataTypes.Select(x => (x, false));
+        //if (this.IsAuthorizedInternal(dataTypes))
+        //    return dataTypes.Select(x => (x, false));
 
         this.permissionRequest = new();
         //using var _ = cancelToken.Register(() => this.permissionRequest.TrySetCanceled());
@@ -116,22 +118,22 @@ public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
     }
 
 
-    protected bool IsAuthorizedInternal(params DataType[] dataTypes)
+    public AccessState GetCurrentStatus(DataType dataType)
     {
-        var result = false;
-        if (this.IsGooglePlayServicesAvailable())
-        {
-            var options = this.ToFitnessOptions(dataTypes);
-            result = GoogleSignIn.HasPermissions(
-                GoogleSignIn.GetLastSignedInAccount(this.platform.CurrentActivity),
-                options
-            );
-        }
-        return result;
+        if (!this.IsGooglePlayServicesAvailable())
+            return AccessState.NotSupported;
+
+        var options = this.ToFitnessOptions(dataType);
+        var result = GoogleSignIn.HasPermissions(
+            GoogleSignIn.GetLastSignedInAccount(this.platform.CurrentActivity),
+            options
+        );
+
+        return result ? AccessState.Available : AccessState.Denied;
     }
 
 
-    protected FitnessOptions ToFitnessOptions(DataType[] dataTypes)
+    protected FitnessOptions ToFitnessOptions(params DataType[] dataTypes)
     {
         var options = FitnessOptions.InvokeBuilder();
 

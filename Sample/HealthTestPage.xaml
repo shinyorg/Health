@@ -58,6 +58,20 @@
                                   Command="{Binding NavToList}"
                                   CommandParameter="StepCount" />
                     </TableSection>
+
+                    <TableSection Title="Current Permissions">
+                        <TextCell Text="Calories"
+                                  Detail="{Binding CaloriesPermission}" />
+
+                        <TextCell Text="Distance"
+                                  Detail="{Binding DistancePermission}" />
+
+                        <TextCell Text="Heart Rate"
+                                  Detail="{Binding HeartRatePermission}" />
+
+                        <TextCell Text="Steps"
+                                  Detail="{Binding StepsPermission}" />
+                    </TableSection>
                 </TableRoot>
             </TableView>
         </VerticalStackLayout>

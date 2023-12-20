@@ -55,6 +55,13 @@ public interface IHealthService
 
 
     /// <summary>
+    /// Get the current access state for a type
+    /// </summary>
+    /// <param name="dataType"></param>
+    /// <returns></returns>
+    AccessState GetCurrentStatus(DataType dataType);
+
+    /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>

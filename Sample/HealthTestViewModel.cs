@@ -1,16 +1,18 @@
-﻿using System.Linq;
-using Shiny.Health;
+﻿using Shiny.Health;
 
 namespace Sample;
 
 
 public class HealthTestViewModel : ViewModel
 {
+    readonly IHealthService healthService;
+
     public HealthTestViewModel(
         BaseServices services,
         IHealthService health
     ) : base(services)
     {
+        this.healthService = health;
         this.Start = DateTime.Now.AddDays(-1).Date;
         this.End = this.Start.ToEndOfDay();
 
@@ -60,13 +62,23 @@ public class HealthTestViewModel : ViewModel
     public override void OnAppearing()
     {
         base.OnAppearing();
-        this.Load.Execute(null);
+
+        this.HeartRatePermission = this.healthService.GetCurrentStatus(DataType.HeartRate);
+        this.StepsPermission = this.healthService.GetCurrentStatus(DataType.StepCount);
+        this.CaloriesPermission = this.healthService.GetCurrentStatus(DataType.Calories);
+        this.DistancePermission = this.healthService.GetCurrentStatus(DataType.Distance);
     }
+
 
     public ICommand Load { get; }
     public ICommand NavToList { get; }
     [Reactive] public DateTimeOffset Start { get; set; }
     [Reactive] public DateTimeOffset End { get; set; }
+
+    [Reactive] public AccessState HeartRatePermission { get; private set; }
+    [Reactive] public AccessState StepsPermission { get; private set; }
+    [Reactive] public AccessState CaloriesPermission { get; private set; }
+    [Reactive] public AccessState DistancePermission { get; private set; }
 
     [Reactive] public string? ErrorText { get; private set; }
     [Reactive] public double Steps { get; private set; }
