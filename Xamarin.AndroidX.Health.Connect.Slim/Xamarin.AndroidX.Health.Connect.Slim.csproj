@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0-android</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+    <!--
+    <ItemGroup>
+        <PackageReference Include="Xamarin.Google.Guava.ListenableFuture" Version="1.0.0.15" />
+        <PackageReference Include="Xamarin.AndroidX.Core.Core.Ktx" Version="1.12.0.1" />
+    </ItemGroup>
+    -->
+    <ItemGroup>
+        <AndroidStudioProject Include="../android" Module="healthconnectslim" GenerateBinding="True" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Xamarin.Binding.Helpers" Version="0.2.0-preview.1" />
+    </ItemGroup>
+</Project>

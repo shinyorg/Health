@@ -5,13 +5,11 @@ plugins {
 android {
     apply from: 'https://raw.githubusercontent.com/Redth/Xamarin.Binding.Helpers/main/Xamarin.Binding.Helpers/FetchXamarinBindingInfo.gradle'
 
-    namespace 'com.androidx.health.connect.slim'
+    namespace 'com.xamarin.androidx.health.connect'
     compileSdk 34
 
     defaultConfig {
         minSdk 28
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
     }
 
@@ -28,8 +26,5 @@ android {
 }
 
 dependencies {
-    implementation "androidx.health.connect:connect-client:1.1.0-alpha02"
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    implementation "androidx.health.connect:connect-client:1.1.0-alpha06"
 }

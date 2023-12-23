@@ -1,0 +1,10 @@
+﻿<metadata>
+	
+	<!--
+	<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.impl.data')]" />
+	<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.impl.sdkservice')]" />
+	<attr path="/api/package[@name='androidx.health']/class[@name='Length']" name="visibility">public</attr>
+	<attr path="/api/package[@name='androidx.health.platform.client.impl.ipc']/interface[@name='Client.ServiceGetter']" name="visibility">public</attr>
+	-->
+	<!--<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.proto')]" />-->
+</metadata>

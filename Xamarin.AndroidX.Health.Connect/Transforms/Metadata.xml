@@ -1,10 +1,85 @@
 ﻿<metadata>
-	<!--
-	<attr path="/api/package[starts-with(@name, 'androidx.health')]" name="managedName">Xamarin.AndroidX.Health</attr>
-	<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.impl.data')]" />
-	<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.impl.sdkservice')]" />
-	<attr path="/api/package[@name='androidx.health']/class[@name='Length']" name="visibility">public</attr>
-	<attr path="/api/package[@name='androidx.health.platform.client.impl.ipc']/interface[@name='Client.ServiceGetter']" name="visibility">public</attr>
-	-->
-	<!--<remove-node path="/api/package[starts-with(@name, 'androidx.health.platform.client.proto')]" />-->
+    <attr path="/api/package[@name='androidx.health']" name="managedName">Xamarin.AndroidX.Health</attr>
+    <attr path="/api/package[@name='androidx.health.connect']" name="managedName">Xamarin.AndroidX.Health.Connect</attr>
+    <attr path="/api/package[@name='androidx.health.connect.client']" name="managedName">Xamarin.AndroidX.Health.Connect.Client</attr>
+    <attr path="/api/package[@name='androidx.health.connect.client.changes']" name="managedName">Xamarin.AndroidX.Health.Connect.Client.Changes</attr>
+    <attr path="/api/package[@name='androidx.health.connect.client.permission']" name="managedName">Xamarin.AndroidX.Health.Connect.Client.Permission</attr>
+    <attr path="/api/package[@name='androidx.health.connect.client.units']" name="managedName">Xamarin.AndroidX.Health.Connect.Client.Units</attr>
+    <attr path="/api/package[@name='androidx.health.connect.client.aggregate']" name="managedName">Xamarin.AndroidX.Health.Connect.Client.Aggregate</attr>
+    <attr path="/api/package[@name='androidx.health.connect.client.records']" name="managedName">Xamarin.AndroidX.Health.Connect.Client.Records</attr>
+    <attr path="/api/package[@name='androidx.health.connect.client.request']" name="managedName">Xamarin.AndroidX.Health.Connect.Client.Request</attr>
+    <attr path="/api/package[@name='androidx.health.connect.client.response']" name="managedName">Xamarin.AndroidX.Health.Connect.Client.Response</attr>
+    <attr path="/api/package[@name='androidx.health.platform']" name="managedName">Xamarin.AndroidX.Health.Platform</attr>
+    <attr path="/api/package[@name='androidx.health.platform.client.proto']" name="managedName">Xamarin.AndroidX.Health.Client.Proto</attr>
+    <attr path="/api/package[@name='androidx.health.platform.client.impl.data']" name="managedName">Xamarin.AndroidX.Health.Platform.Client.Impl.Data</attr>
+    <attr path="/api/package[@name='androidx.health.platform.client.request']" name="managedName">Xamarin.AndroidX.Health.Platform.Client.Request</attr>
+    <attr path="/api/package[@name='androidx.health.platform.client.response']" name="managedName">Xamarin.AndroidX.Health.Platform.Client.Response</attr>
+    <remove-node path="/api/package[@name='androidx.health.platform.client.proto']/class[@name='CodedOutputStream']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.proto']/class[@name='AbstractParser']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.proto']/class[@name='ByteString']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.proto']/class[@name='LazyStringArrayList']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.proto']/class[@name='Internal']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.proto']/class[@name='NullValue']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.proto']/class[@name='UnmodifiableLazyStringList']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.proto']/class[@name='GeneratedMessageLite']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.impl.ipc']" />
+    <remove-node path="/api/package[@name='androidx.health.platform.client.impl.sdkservice']" />
+
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/*">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <!--
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='BloodGlucose']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Energy']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Length']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Mass']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Percentage']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Power']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Pressure']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Temperature']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Volume']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    <add-node path="/api/package[@name='androidx.health.connect.client.units']/class[@name='Velocity']">
+        <method name="compareTo" return="int" abstract="false" native="false" synchronized="false" static="false" final="false" deprecated="not deprecated" visibility="public">
+            <parameter name="p0" type="java.lang.Object" />
+        </method>
+    </add-node>
+    -->
 </metadata>
