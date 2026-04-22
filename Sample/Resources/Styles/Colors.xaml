@@ -1,22 +1,66 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <?xaml-comp compile="true" ?>
-<ResourceDictionary 
+<ResourceDictionary
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <Color x:Key="Primary">#512BD4</Color>
-    <Color x:Key="Secondary">#DFD8F7</Color>
-    <Color x:Key="Tertiary">#2B0B98</Color>
-    <Color x:Key="White">White</Color>
-    <Color x:Key="Black">Black</Color>
-    <Color x:Key="Gray100">#E1E1E1</Color>
-    <Color x:Key="Gray200">#C8C8C8</Color>
-    <Color x:Key="Gray300">#ACACAC</Color>
-    <Color x:Key="Gray400">#919191</Color>
-    <Color x:Key="Gray500">#6E6E6E</Color>
-    <Color x:Key="Gray600">#404040</Color>
-    <Color x:Key="Gray900">#212121</Color>
-    <Color x:Key="Gray950">#141414</Color>
+    <!-- Health-themed palette -->
+    <Color x:Key="Primary">#10B981</Color>
+    <Color x:Key="PrimaryDark">#059669</Color>
+    <Color x:Key="PrimaryLight">#D1FAE5</Color>
+    <Color x:Key="Secondary">#6366F1</Color>
+    <Color x:Key="SecondaryLight">#E0E7FF</Color>
+    <Color x:Key="Tertiary">#F59E0B</Color>
+    <Color x:Key="Accent">#EF4444</Color>
+
+    <Color x:Key="White">#FFFFFF</Color>
+    <Color x:Key="Black">#000000</Color>
+    <Color x:Key="Background">#F8FAFC</Color>
+    <Color x:Key="Surface">#FFFFFF</Color>
+    <Color x:Key="CardBackground">#FFFFFF</Color>
+
+    <Color x:Key="TextPrimary">#1E293B</Color>
+    <Color x:Key="TextSecondary">#64748B</Color>
+    <Color x:Key="TextMuted">#94A3B8</Color>
+
+    <Color x:Key="Gray100">#F1F5F9</Color>
+    <Color x:Key="Gray200">#E2E8F0</Color>
+    <Color x:Key="Gray300">#CBD5E1</Color>
+    <Color x:Key="Gray400">#94A3B8</Color>
+    <Color x:Key="Gray500">#64748B</Color>
+    <Color x:Key="Gray600">#475569</Color>
+    <Color x:Key="Gray900">#0F172A</Color>
+    <Color x:Key="Gray950">#020617</Color>
+
+    <!-- Metric card colors -->
+    <Color x:Key="StepsColor">#10B981</Color>
+    <Color x:Key="CaloriesColor">#F59E0B</Color>
+    <Color x:Key="DistanceColor">#6366F1</Color>
+    <Color x:Key="HeartRateColor">#EF4444</Color>
+
+    <Color x:Key="StepsBackground">#ECFDF5</Color>
+    <Color x:Key="CaloriesBackground">#FFFBEB</Color>
+    <Color x:Key="DistanceBackground">#EEF2FF</Color>
+    <Color x:Key="HeartRateBackground">#FEF2F2</Color>
+
+    <!-- New metric colors -->
+    <Color x:Key="WeightColor">#8B5CF6</Color>
+    <Color x:Key="WeightBackground">#F5F3FF</Color>
+    <Color x:Key="HeightColor">#06B6D4</Color>
+    <Color x:Key="HeightBackground">#ECFEFF</Color>
+    <Color x:Key="BodyFatColor">#F97316</Color>
+    <Color x:Key="BodyFatBackground">#FFF7ED</Color>
+    <Color x:Key="RestingHrColor">#EC4899</Color>
+    <Color x:Key="RestingHrBackground">#FDF2F8</Color>
+    <Color x:Key="BloodPressureColor">#DC2626</Color>
+    <Color x:Key="BloodPressureBackground">#FEF2F2</Color>
+    <Color x:Key="OxygenColor">#0EA5E9</Color>
+    <Color x:Key="OxygenBackground">#F0F9FF</Color>
+    <Color x:Key="SleepColor">#7C3AED</Color>
+    <Color x:Key="SleepBackground">#F5F3FF</Color>
+    <Color x:Key="HydrationColor">#0891B2</Color>
+    <Color x:Key="HydrationBackground">#ECFEFF</Color>
+
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
@@ -30,15 +74,5 @@
     <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
     <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
     <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
-
-    <Color x:Key="Yellow100Accent">#F7B548</Color>
-    <Color x:Key="Yellow200Accent">#FFD590</Color>
-    <Color x:Key="Yellow300Accent">#FFE5B9</Color>
-    <Color x:Key="Cyan100Accent">#28C2D1</Color>
-    <Color x:Key="Cyan200Accent">#7BDDEF</Color>
-    <Color x:Key="Cyan300Accent">#C3F2F4</Color>
-    <Color x:Key="Blue100Accent">#3E8EED</Color>
-    <Color x:Key="Blue200Accent">#72ACF1</Color>
-    <Color x:Key="Blue300Accent">#A7CBF6</Color>
 
 </ResourceDictionary>

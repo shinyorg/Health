@@ -9,36 +9,23 @@ public static class MauiProgram
         .CreateBuilder()
         .UseMauiApp<App>()
         .UseMauiCommunityToolkit()
-        .UseShinyFramework(
-            new DryIocContainerExtension(),
-            prism => prism.OnAppStart("NavigationPage/HealthTestPage"),
-            new(ErrorAlertType.FullError)
-        )
+        .UseShinyShell(x => x.AddGeneratedMaps())
         .ConfigureFonts(fonts =>
         {
             fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-            fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold"); 
+            fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
         })
-        .RegisterInfrastructure()
-        .RegisterViews()
+        .RegisterServices()
         .Build();
 
 
-    static MauiAppBuilder RegisterInfrastructure(this MauiAppBuilder builder)
+    static MauiAppBuilder RegisterServices(this MauiAppBuilder builder)
     {
 #if DEBUG
         builder.Logging.SetMinimumLevel(LogLevel.Trace);
-        builder.Logging.AddConsole();
+        builder.Logging.AddDebug();
 #endif
         builder.Services.AddHealthIntegration();
-        return builder;
-    }
-
-
-    static MauiAppBuilder RegisterViews(this MauiAppBuilder builder)
-    {
-        builder.Services.RegisterForNavigation<HealthTestPage, HealthTestViewModel>();
-        builder.Services.RegisterForNavigation<ListPage, ListViewModel>();
         return builder;
     }
 }

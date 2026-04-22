@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="3.0.44" Condition="$([MSBuild]::IsOSPlatform('windows'))" />
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Description>Cross Platform health data - Apple Health and Google Fit Integrations</Description>
-        <TargetFrameworks>net8.0;net8.0-ios;net8.0-android</TargetFrameworks>
-        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);netstandard2.1;xamarin.ios10;monoandroid13.0</TargetFrameworks>
+        <Description>Cross Platform health data - Apple Health and Android Health Connect Integrations</Description>
+        <TargetFrameworks>net10.0;net10.0-ios;net10.0-android</TargetFrameworks>
+        <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('android'))">28.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('ios'))">14.0</SupportedOSPlatformVersion>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
@@ -14,7 +14,7 @@
         <PackageIcon>icon.png</PackageIcon>
         <PackageProjectUrl>https://shinylib.net</PackageProjectUrl>
         <PackageReleaseNotes>https://shinylib.net/release-notes</PackageReleaseNotes>
-        <PackageTags>shiny googlefit applehealth</PackageTags>
+        <PackageTags>shiny applehealth healthconnect healthkit</PackageTags>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/shinyorg/health</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
@@ -30,12 +30,11 @@
         <EmbedUntrackedSources>True</EmbedUntrackedSources>
     </PropertyGroup>
 
-	<ItemGroup>
+    <ItemGroup>
         <None Include="..\nuget.png" Pack="true" PackagePath="icon.png" />
         <None Include="..\nuget.txt" Pack="true" PackagePath="readme.txt" />
         <None Include="..\readme.md" Pack="true" PackagePath="\" />
-		<PackageReference Include="NerdBank.GitVersioning" Version="3.6.133" PrivateAssets="All" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="NerdBank.GitVersioning" Version="3.9.50" PrivateAssets="All" />
     </ItemGroup>
 
     <PropertyGroup Condition="$(TargetFramework.Contains('android'))">
@@ -50,19 +49,15 @@
         <None Include="Platforms\**\*.cs" />
         <Compile Remove="Platforms\**\*.cs" />
 
-        <PackageReference Include="Shiny.Core" Version="3.2.0" />
-        <!--<PackageReference Include="UnitsNet" Version="5.0.0-rc004" />-->
+        <PackageReference Include="Shiny.Core" Version="4.0.1" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetFramework.Contains('android'))">
         <Compile Include="Platforms\Shared\**\*.cs" />
         <Compile Include="Platforms\Android\**\*.cs" />
 
-        <!--<ProjectReference Include="..\Xamarin.AndroidX.Health.Connect\Xamarin.AndroidX.Health.Connect.csproj" />-->
-        <PackageReference Include="Xamarin.AndroidX.Collection.Jvm" Version="1.3.0.2" />
-        <PackageReference Include="Xamarin.AndroidX.Collection.Ktx" Version="1.3.0.2" />
-        <PackageReference Include="Xamarin.GooglePlayServices.Auth" Version="120.7.0.1" />
-        <PackageReference Include="Xamarin.GooglePlayServices.Fitness" Version="121.1.0.6" />
+        <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" Version="2.10.0.2" />
+        <PackageReference Include="Xamarin.AndroidX.Health.Connect.ConnectClient" Version="1.1.0.2" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetFramework.Contains('ios'))">
@@ -70,9 +65,4 @@
         <Compile Include="Platforms\iOS\**\*.cs" />
     </ItemGroup>
 
-    <PropertyGroup Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('monoandroid')) OR $(TargetFramework.Contains('xamarin'))">
-        <DefineConstants>$(DefineConstants);XAMARIN</DefineConstants>
-    </PropertyGroup>
-
-    <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="3.0.44" Condition="$([MSBuild]::IsOSPlatform('windows'))" />
 </Project>

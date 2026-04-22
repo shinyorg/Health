@@ -1,76 +1,152 @@
-﻿using System.Linq;
-using Shiny.Health;
-
 namespace Sample;
 
 
-public class HealthTestViewModel : ViewModel
+[ShellMap<HealthTestPage>(registerRoute: false)]
+public partial class HealthTestViewModel(
+    INavigator navigator,
+    IHealthService health
+) : ObservableObject, IPageLifecycleAware
 {
-    public HealthTestViewModel(
-        BaseServices services,
-        IHealthService health
-    ) : base(services)
-    {
-        this.Start = DateTime.Now.AddDays(-1).Date;
-        this.End = this.Start.ToEndOfDay();
+    [ObservableProperty]
+    DateTimeOffset start = DateTime.Now.AddDays(-1).Date;
 
-        this.Load = ReactiveCommand.CreateFromTask(async () =>
+    [ObservableProperty]
+    DateTimeOffset end = new DateTimeOffset(DateTime.Now.Date).ToEndOfDay();
+
+    [ObservableProperty]
+    string? errorText;
+
+    [ObservableProperty]
+    bool isBusy;
+
+    [ObservableProperty]
+    double steps;
+
+    [ObservableProperty]
+    double calories;
+
+    [ObservableProperty]
+    double distance;
+
+    [ObservableProperty]
+    double heartRate;
+
+    [ObservableProperty]
+    double weight;
+
+    [ObservableProperty]
+    double height;
+
+    [ObservableProperty]
+    double bodyFatPercentage;
+
+    [ObservableProperty]
+    double restingHeartRate;
+
+    [ObservableProperty]
+    double systolic;
+
+    [ObservableProperty]
+    double diastolic;
+
+    [ObservableProperty]
+    double oxygenSaturation;
+
+    [ObservableProperty]
+    double sleepDuration;
+
+    [ObservableProperty]
+    double hydration;
+
+    public bool HasError => !string.IsNullOrEmpty(ErrorText);
+
+
+    public async void OnAppearing()
+    {
+        await LoadDataAsync();
+    }
+
+    public void OnDisappearing() { }
+
+
+    [RelayCommand]
+    async Task LoadDataAsync()
+    {
+        if (IsBusy) return;
+
+        try
         {
-            var result = await health.RequestPermissions(
+            IsBusy = true;
+            ErrorText = null;
+            OnPropertyChanged(nameof(HasError));
+
+            await health.RequestPermissions(
                 DataType.Calories,
                 DataType.Distance,
                 DataType.HeartRate,
-                DataType.StepCount
+                DataType.StepCount,
+                DataType.Weight,
+                DataType.Height,
+                DataType.BodyFatPercentage,
+                DataType.RestingHeartRate,
+                DataType.BloodPressure,
+                DataType.OxygenSaturation,
+                DataType.SleepDuration,
+                DataType.Hydration
             );
-            //if (!result)
-            //{
-            //    await this.Dialogs.Alert("Failed permission check");
-            //    return;
-            //}
 
-            if (this.Start < this.End)
+            if (Start >= End)
             {
-                this.ErrorText = String.Empty;
-            }
-            else
-            {
-                this.ErrorText = "Start date must be greater than End date";
-                this.Calories = 0;
-                this.HeartRate = 0;
-                this.Distance = 0;
-                this.Steps = 0;
+                ErrorText = "Start date must be before end date";
+                OnPropertyChanged(nameof(HasError));
                 return;
             }
 
-            this.Distance = (await health.GetDistances(this.Start, this.End, Interval.Days)).Sum(x => x.Value);
-            this.Calories = (await health.GetCalories(this.Start, this.End, Interval.Days)).Sum(x => x.Value);            
-            this.Steps = (await health.GetStepCounts(this.Start, this.End, Interval.Days)).Sum(x => x.Value);
-            this.HeartRate = (await health.GetAverageHeartRate(this.Start, this.End, Interval.Days)).Average(x => x.Value);
-        });
-        this.BindBusyCommand(this.Load);
+            Distance = (await health.GetDistances(Start, End, Interval.Days)).Sum(x => x.Value);
+            Calories = (await health.GetCalories(Start, End, Interval.Days)).Sum(x => x.Value);
+            Steps = (await health.GetStepCounts(Start, End, Interval.Days)).Sum(x => x.Value);
 
-        this.NavToList = ReactiveCommand.CreateFromTask(async (string arg) =>
+            var heartRateData = await health.GetAverageHeartRate(Start, End, Interval.Days);
+            HeartRate = heartRateData.Any() ? heartRateData.Average(x => x.Value) : 0;
+
+            var weightData = await health.GetWeight(Start, End, Interval.Days);
+            Weight = weightData.Any() ? weightData.Average(x => x.Value) : 0;
+
+            var heightData = await health.GetHeight(Start, End, Interval.Days);
+            Height = heightData.Any() ? heightData.Average(x => x.Value) : 0;
+
+            var bodyFatData = await health.GetBodyFatPercentage(Start, End, Interval.Days);
+            BodyFatPercentage = bodyFatData.Any() ? bodyFatData.Average(x => x.Value) : 0;
+
+            var restingHrData = await health.GetRestingHeartRate(Start, End, Interval.Days);
+            RestingHeartRate = restingHrData.Any() ? restingHrData.Average(x => x.Value) : 0;
+
+            var bpData = await health.GetBloodPressure(Start, End, Interval.Days);
+            Systolic = bpData.Any() ? bpData.Average(x => x.Systolic) : 0;
+            Diastolic = bpData.Any() ? bpData.Average(x => x.Diastolic) : 0;
+
+            var o2Data = await health.GetOxygenSaturation(Start, End, Interval.Days);
+            OxygenSaturation = o2Data.Any() ? o2Data.Average(x => x.Value) : 0;
+
+            SleepDuration = (await health.GetSleepDuration(Start, End, Interval.Days)).Sum(x => x.Value);
+            Hydration = (await health.GetHydration(Start, End, Interval.Days)).Sum(x => x.Value);
+        }
+        catch (Exception ex)
         {
-            var type = Enum.Parse<DataType>(arg);
-            await this.Navigation.Navigate("ListPage", ("Type", type));
-        });
+            ErrorText = ex.Message;
+            OnPropertyChanged(nameof(HasError));
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
 
-    public override void OnAppearing()
+    [RelayCommand]
+    async Task NavToList(string dataTypeName)
     {
-        base.OnAppearing();
-        this.Load.Execute(null);
+        var type = Enum.Parse<DataType>(dataTypeName);
+        await navigator.NavigateTo("List", args: [("Type", type)]);
     }
-
-    public ICommand Load { get; }
-    public ICommand NavToList { get; }
-    [Reactive] public DateTimeOffset Start { get; set; }
-    [Reactive] public DateTimeOffset End { get; set; }
-
-    [Reactive] public string? ErrorText { get; private set; }
-    [Reactive] public double Steps { get; private set; }
-    [Reactive] public double Calories { get; private set; }
-    [Reactive] public double Distance { get; private set; }
-    [Reactive] public double HeartRate { get; private set; }
 }

@@ -14,7 +14,15 @@ public enum DataType
     StepCount,
     HeartRate,
     Calories,
-    Distance
+    Distance,
+    Weight,
+    Height,
+    BodyFatPercentage,
+    RestingHeartRate,
+    BloodPressure,
+    OxygenSaturation,
+    SleepDuration,
+    Hydration
 }
 
 public abstract record HealthResult(
@@ -29,3 +37,10 @@ public record NumericHealthResult(
     DateTimeOffset End,
     double Value
 ) : HealthResult(DataType, Start, End);
+
+public record BloodPressureResult(
+    DateTimeOffset Start,
+    DateTimeOffset End,
+    double Systolic,
+    double Diastolic
+) : HealthResult(DataType.BloodPressure, Start, End);

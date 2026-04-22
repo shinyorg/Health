@@ -1,93 +1,118 @@
-﻿# Shiny Health
+# Shiny Health
 
-Apple Health and Google Fit for your .NET7+ .NET Mobile apps
+Apple HealthKit and Android Health Connect for your .NET MAUI apps.
 
 ## Features
-* Read summary values between timestamps and specified interval
-* Query distance, step count, calory intake, & heart rate
-* TODO: Write values
+* Read summary values between timestamps at specified intervals
+* Query distance, step count, calories, and heart rate
+* Query weight, height, body fat percentage, and resting heart rate
+* Query blood pressure (systolic/diastolic), oxygen saturation, sleep duration, and hydration
+* Permission management for both platforms
 
 ## How To Use
 
 ```csharp
-IHealthService health; // inject, resolve, etc
+IHealthService health; // inject via DI
 
 // request permissions
-var result = await health.RequestPermission(
-    new Permission(DistanceHealthMetric.Default, PermissionType.Read),
-    new Permission(CaloriesHealthMetric.Default, PermissionType.Read),
-    new Permission(StepCountHealthMetric.Default, PermissionType.Read),
-    new Permission(HeartRateHealthMetric.Default, PermissionType.Read)
+var result = await health.RequestPermissions(
+    DataType.Calories,
+    DataType.Distance,
+    DataType.StepCount,
+    DataType.HeartRate,
+    DataType.Weight,
+    DataType.Height,
+    DataType.BodyFatPercentage,
+    DataType.RestingHeartRate,
+    DataType.BloodPressure,
+    DataType.OxygenSaturation,
+    DataType.SleepDuration,
+    DataType.Hydration
 );
-if (!result)
-{
-    // say something useful
-}
 
 var end = DateTimeOffset.Now;
 var start = DateTimeOffset.Now.AddDays(-1);
 
-// now run your queries
-var distance = (await health.Query(DistanceHealthMetric.Default, start, end, Interval.Days)).Sum(x => x.Value);
-var calories = (await health.Query(CaloriesHealthMetric.Default, start, end, Interval.Days)).Sum(x => x.Value);
-var steps = (await health.Query(StepCountHealthMetric.Default, start, end, Interval.Days)).Sum(x => x.Value);
-var heartRate = (await health.Query(HeartRateHealthMetric.Default, start, end, Interval.Days)).Average(x => x.Value);
+// query data
+var distance = (await health.GetDistances(start, end, Interval.Days)).Sum(x => x.Value);
+var calories = (await health.GetCalories(start, end, Interval.Days)).Sum(x => x.Value);
+var steps = (await health.GetStepCounts(start, end, Interval.Days)).Sum(x => x.Value);
+var heartRate = (await health.GetAverageHeartRate(start, end, Interval.Days)).Average(x => x.Value);
+
+// body metrics
+var weight = (await health.GetWeight(start, end, Interval.Days)).Average(x => x.Value); // kg
+var height = (await health.GetHeight(start, end, Interval.Days)).Average(x => x.Value); // meters
+var bodyFat = (await health.GetBodyFatPercentage(start, end, Interval.Days)).Average(x => x.Value); // %
+var restingHr = (await health.GetRestingHeartRate(start, end, Interval.Days)).Average(x => x.Value); // bpm
+
+// vitals
+var o2 = (await health.GetOxygenSaturation(start, end, Interval.Days)).Average(x => x.Value); // %
+var bp = await health.GetBloodPressure(start, end, Interval.Days); // BloodPressureResult with Systolic/Diastolic (mmHg)
+
+// lifestyle
+var sleep = (await health.GetSleepDuration(start, end, Interval.Days)).Sum(x => x.Value); // hours
+var water = (await health.GetHydration(start, end, Interval.Days)).Sum(x => x.Value); // liters
 ```
+
+## Supported Metrics
+
+| Metric | Unit | iOS (HealthKit) | Android (Health Connect) |
+|--------|------|-----------------|--------------------------|
+| Step Count | count | StepCount | StepsRecord |
+| Heart Rate | bpm | HeartRate | HeartRateRecord |
+| Calories | kcal | ActiveEnergyBurned | TotalCaloriesBurnedRecord |
+| Distance | meters | DistanceWalkingRunning | DistanceRecord |
+| Weight | kg | BodyMass | WeightRecord |
+| Height | meters | Height | HeightRecord |
+| Body Fat % | % | BodyFatPercentage | BodyFatRecord |
+| Resting Heart Rate | bpm | RestingHeartRate | RestingHeartRateRecord |
+| Blood Pressure | mmHg | BloodPressureSystolic/Diastolic | BloodPressureRecord |
+| Oxygen Saturation | % | OxygenSaturation | OxygenSaturationRecord |
+| Sleep Duration | hours | SleepAnalysis | SleepSessionRecord |
+| Hydration | liters | DietaryWater | HydrationRecord |
 
 ## Setup
 
-The fastest way to get going in a new application is to use our community dotnet template.  Just run
+Install from NuGet: [![NuGet](https://img.shields.io/nuget/v/Shiny.Health.svg?maxAge=2592000)](https://www.nuget.org/packages/Shiny.Health/)
 
-> dotnet new install Shiny.Templates
+```bash
+dotnet add package Shiny.Health
+```
 
-### MAUI
+In your `MauiProgram.cs`:
 
-Install Shiny.Health from [![NuGet](https://img.shields.io/nuget/v/Shiny.Health.svg?maxAge=2592000)](https://www.nuget.org/packages/Shiny.Health/)
-
-Now, in your MauiProgram.cs, add:
-
-```cshar
-
+```csharp
 public static MauiApp CreateMauiApp()
 {
     var builder = MauiApp
         .CreateBuilder()
-        .UseShiny()
         .UseMauiApp<App>()
-        .ConfigureFonts(fonts =>
-        {
-            fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-            fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold"); 
-        });
+        .UseShiny();
 
     builder.Services.AddHealthIntegration();
     return builder.Build();
 }
 ```
 
-### iOS
+### iOS Setup
 
-To use iOS (and therefore the sample), you need to have a provisioning profile with all
-of the necessary Apple Health setup for your application.
-
-Take a look at the Xamarin docs for [more info](https://learn.microsoft.com/en-us/xamarin/ios/platform/healthkit)
-
-Add the following:
+Your app requires a provisioning profile with HealthKit capabilities enabled.
 
 #### Info.plist
 
 ```xml
 <key>UIRequiredDeviceCapabilities</key>
 <array>
-        <string>healthkithealthkit</string>
+    <string>healthkit</string>
 </array>
 <key>NSHealthUpdateUsageDescription</key>
-<string>We need to say something useful here</string>
+<string>We need access to update your health data</string>
 <key>NSHealthShareUsageDescription</key>
-<string>We need to say something useful here</string>
+<string>We need access to read your health data</string>
 ```
 
 #### Entitlements.plist
+
 ```xml
 <key>com.apple.developer.healthkit</key>
 <true />
@@ -95,40 +120,35 @@ Add the following:
 <true />
 ```
 
-### Google Fit
+### Android Setup (Health Connect)
 
-[Google Fit](http://developers.google.com/fit/android/get-started)
+Android uses [Health Connect](https://developer.android.com/health-and-fitness/health-connect) (the replacement for the deprecated Google Fit API). Health Connect requires Android 9 (API 28) or higher.
 
-To Test Locally:
-* You have added your x to your Project's configuration setting on Google or Firebase Account.
-* Downloaded and added google-services.json to your android project after adding the debug SHA1 key in your account.
-* Package name (on Firebase account) and Application Id (on android) must be same .. Android's package name might be different, no problems with that.
-
-** https://github.com/android/fit-samples/blob/main/StepCounterKotlin/app/src/main/java/com/google/android/gms/fit/samples/stepcounterkotlin/MainActivity.kt
-** https://github.com/android/fit-samples/blob/main/BasicHistoryApiKotlin/app/src/main/AndroidManifest.xml
-
-##### Setup
-
-1. Sign Up at https://console.cloud.google.com/apis/dashboard
-2. Under "Enabled APIs and services", search for "Fitness API"
-3. After selecting "Fitness API" - enable the service
-4. Now go to Firebase and add your project created in step 1
-5. When creating your app, you need to ensure that your android app package name matches between firebase, cloud console, & androidmanifest.xml
-6. You will need to add your debug SHA-1 debug key using
-    > keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore
-    > Password is 'android'
-7. Download the google-services.json
-8. Copy/paste file into your MAUI app at Platforms/Android and alter your csproj to the following
-```xml
-<ItemGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
-	<GoogleServicesJson Include="Platforms\Android\google-services.json" />
-</ItemGroup>
-```
-
-##### AndroidManifest.xml
-
-The following entry is needed for step data
+#### AndroidManifest.xml
 
 ```xml
-<uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+<!-- Required: declare which health data your app reads -->
+<uses-permission android:name="android.permission.health.READ_STEPS" />
+<uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+<uses-permission android:name="android.permission.health.READ_TOTAL_ENERGY_BURNED" />
+<uses-permission android:name="android.permission.health.READ_DISTANCE" />
+<uses-permission android:name="android.permission.health.READ_WEIGHT" />
+<uses-permission android:name="android.permission.health.READ_HEIGHT" />
+<uses-permission android:name="android.permission.health.READ_BODY_FAT" />
+<uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
+<uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
+<uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
+<uses-permission android:name="android.permission.health.READ_SLEEP" />
+<uses-permission android:name="android.permission.health.READ_HYDRATION" />
+<uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+<!-- Required: allow your app to discover Health Connect -->
+<queries>
+    <package android:name="com.google.android.apps.healthdata" />
+</queries>
 ```
+
+#### Requirements
+
+* The [Health Connect](https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata) app must be installed on the device
+* Minimum SDK version must be set to **28** (Android 9)

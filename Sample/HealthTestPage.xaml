@@ -1,65 +1,411 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:sample="clr-namespace:Sample"
              x:DataType="sample:HealthTestViewModel"
              x:Class="Sample.HealthTestPage"
-             Title="Health Test">
+             Title="Health Dashboard"
+             BackgroundColor="{StaticResource Background}">
 
     <RefreshView IsRefreshing="{Binding IsBusy}"
-                 Command="{Binding Load}">
+                 Command="{Binding LoadDataCommand}">
 
-        <VerticalStackLayout>
-            <Grid RowDefinitions="Auto, Auto, Auto"
-                  ColumnDefinitions="1*, 3*">
+        <ScrollView Padding="16">
+            <VerticalStackLayout Spacing="16">
 
-                <Label Text="Start"
-                       Grid.Row="0"
-                       Grid.Column="0" />
+                <!-- Date Range Card -->
+                <Border StrokeShape="RoundRectangle 12"
+                        StrokeThickness="0"
+                        BackgroundColor="{StaticResource Surface}"
+                        Padding="16"
+                        Shadow="{OnPlatform Default={Shadow Brush='{StaticResource Gray300Brush}', Offset='0,2', Radius=8, Opacity=0.3}}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Date Range"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}" />
 
-                <DatePicker Date="{Binding Start}"
-                            Grid.Row="0"
-                            Grid.Column="1" />
+                        <Grid RowDefinitions="Auto, Auto"
+                              ColumnDefinitions="Auto, *"
+                              ColumnSpacing="12"
+                              RowSpacing="8">
 
-                <Label Text="End"
-                       Grid.Row="1"
-                       Grid.Column="0" />
+                            <Label Text="From"
+                                   VerticalOptions="Center"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   Grid.Row="0" Grid.Column="0" />
+                            <DatePicker Date="{Binding Start}"
+                                        TextColor="{StaticResource TextPrimary}"
+                                        Grid.Row="0" Grid.Column="1" />
 
-                <DatePicker Date="{Binding End}"
-                            Grid.Row="1"
-                            Grid.Column="1" />
+                            <Label Text="To"
+                                   VerticalOptions="Center"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   Grid.Row="1" Grid.Column="0" />
+                            <DatePicker Date="{Binding End}"
+                                        TextColor="{StaticResource TextPrimary}"
+                                        Grid.Row="1" Grid.Column="1" />
+                        </Grid>
 
-                <Button Text="Query"
-                        Command="{Binding Load}"
-                        Grid.Row="2"
-                        Grid.ColumnSpan="2" />
-            </Grid>
+                        <Button Text="Refresh Data"
+                                Command="{Binding LoadDataCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="8"
+                                HeightRequest="44" />
+                    </VerticalStackLayout>
+                </Border>
 
-            <TableView Intent="Data">
-                <TableRoot>
-                    <TableSection>
-                        <TextCell Text="Calories (total - kilocalories)"
-                                  Detail="{Binding Calories}"
-                                  Command="{Binding NavToList}"
-                                  CommandParameter="Calories" />
+                <!-- Error Banner -->
+                <Border StrokeShape="RoundRectangle 8"
+                        StrokeThickness="0"
+                        BackgroundColor="#FEF2F2"
+                        Padding="12"
+                        IsVisible="{Binding HasError}">
+                    <Label Text="{Binding ErrorText}"
+                           TextColor="{StaticResource Accent}"
+                           FontSize="14" />
+                </Border>
 
-                        <TextCell Text="Distance (total - meters)"
-                                  Detail="{Binding Distance}"
-                                  Command="{Binding NavToList}"
-                                  CommandParameter="Distance" />
+                <!-- Activity Section -->
+                <Label Text="Activity"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" />
 
-                        <TextCell Text="Heart Rate (avg)"
-                                  Detail="{Binding HeartRate}"
-                                  Command="{Binding NavToList}"
-                                  CommandParameter="HeartRate" />
+                <Grid ColumnDefinitions="*, *"
+                      RowDefinitions="Auto, Auto"
+                      ColumnSpacing="12"
+                      RowSpacing="12">
 
-                        <TextCell Text="Steps (total)"
-                                  Detail="{Binding Steps}"
-                                  Command="{Binding NavToList}"
-                                  CommandParameter="StepCount" />
-                    </TableSection>
-                </TableRoot>
-            </TableView>
-        </VerticalStackLayout>
+                    <!-- Steps Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource StepsBackground}"
+                            Padding="16"
+                            Grid.Row="0" Grid.Column="0">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="StepCount" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Steps"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding Steps, StringFormat='{0:N0}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource StepsColor}" />
+                            <Label Text="total"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Calories Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource CaloriesBackground}"
+                            Padding="16"
+                            Grid.Row="0" Grid.Column="1">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="Calories" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Calories"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding Calories, StringFormat='{0:N0}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource CaloriesColor}" />
+                            <Label Text="kcal"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Distance Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource DistanceBackground}"
+                            Padding="16"
+                            Grid.Row="1" Grid.Column="0">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="Distance" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Distance"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding Distance, StringFormat='{0:N0}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource DistanceColor}" />
+                            <Label Text="meters"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Heart Rate Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource HeartRateBackground}"
+                            Padding="16"
+                            Grid.Row="1" Grid.Column="1">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="HeartRate" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Heart Rate"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding HeartRate, StringFormat='{0:N0}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource HeartRateColor}" />
+                            <Label Text="avg bpm"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Body Metrics Section -->
+                <Label Text="Body Metrics"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" />
+
+                <Grid ColumnDefinitions="*, *"
+                      RowDefinitions="Auto, Auto"
+                      ColumnSpacing="12"
+                      RowSpacing="12">
+
+                    <!-- Weight Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource WeightBackground}"
+                            Padding="16"
+                            Grid.Row="0" Grid.Column="0">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="Weight" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Weight"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding Weight, StringFormat='{0:N1}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource WeightColor}" />
+                            <Label Text="kg"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Height Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource HeightBackground}"
+                            Padding="16"
+                            Grid.Row="0" Grid.Column="1">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="Height" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Height"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding Height, StringFormat='{0:N2}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource HeightColor}" />
+                            <Label Text="meters"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Body Fat Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource BodyFatBackground}"
+                            Padding="16"
+                            Grid.Row="1" Grid.Column="0">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="BodyFatPercentage" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Body Fat"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding BodyFatPercentage, StringFormat='{0:N1}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource BodyFatColor}" />
+                            <Label Text="%"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Resting Heart Rate Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource RestingHrBackground}"
+                            Padding="16"
+                            Grid.Row="1" Grid.Column="1">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="RestingHeartRate" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Resting HR"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding RestingHeartRate, StringFormat='{0:N0}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource RestingHrColor}" />
+                            <Label Text="bpm"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Vitals Section -->
+                <Label Text="Vitals"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" />
+
+                <Grid ColumnDefinitions="*, *"
+                      RowDefinitions="Auto"
+                      ColumnSpacing="12"
+                      RowSpacing="12">
+
+                    <!-- Blood Pressure Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource BloodPressureBackground}"
+                            Padding="16"
+                            Grid.Row="0" Grid.Column="0">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Blood Pressure"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <HorizontalStackLayout Spacing="2">
+                                <Label Text="{Binding Systolic, StringFormat='{0:N0}'}"
+                                       FontSize="28"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource BloodPressureColor}" />
+                                <Label Text="/"
+                                       FontSize="28"
+                                       TextColor="{StaticResource TextMuted}"
+                                       VerticalOptions="Center" />
+                                <Label Text="{Binding Diastolic, StringFormat='{0:N0}'}"
+                                       FontSize="28"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource BloodPressureColor}" />
+                            </HorizontalStackLayout>
+                            <Label Text="mmHg"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Oxygen Saturation Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource OxygenBackground}"
+                            Padding="16"
+                            Grid.Row="0" Grid.Column="1">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="OxygenSaturation" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="O2 Saturation"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding OxygenSaturation, StringFormat='{0:N1}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource OxygenColor}" />
+                            <Label Text="%"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Lifestyle Section -->
+                <Label Text="Lifestyle"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" />
+
+                <Grid ColumnDefinitions="*, *"
+                      RowDefinitions="Auto"
+                      ColumnSpacing="12"
+                      RowSpacing="12">
+
+                    <!-- Sleep Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource SleepBackground}"
+                            Padding="16"
+                            Grid.Row="0" Grid.Column="0">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="SleepDuration" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Sleep"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding SleepDuration, StringFormat='{0:N1}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource SleepColor}" />
+                            <Label Text="hours"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Hydration Card -->
+                    <Border StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource HydrationBackground}"
+                            Padding="16"
+                            Grid.Row="0" Grid.Column="1">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NavToListCommand}" CommandParameter="Hydration" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Hydration"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Label Text="{Binding Hydration, StringFormat='{0:N2}'}"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource HydrationColor}" />
+                            <Label Text="liters"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <Label Text="Tap a card for hourly details"
+                       FontSize="12"
+                       TextColor="{StaticResource TextMuted}"
+                       HorizontalOptions="Center"
+                       Margin="0,0,0,16" />
+
+            </VerticalStackLayout>
+        </ScrollView>
     </RefreshView>
 </ContentPage>

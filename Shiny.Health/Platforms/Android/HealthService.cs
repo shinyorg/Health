@@ -1,428 +1,474 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
-using Android.Gms.Auth.Api.SignIn;
-using Android.Gms.Common;
-using Android.Gms.Common.Apis;
-using Android.Gms.Fitness;
-using Android.Gms.Fitness.Data;
-using Android.Gms.Fitness.Request;
-using Java.Util.Concurrent;
+using AndroidX.Health.Connect.Client;
+using AndroidX.Health.Connect.Client.Aggregate;
+using AndroidX.Health.Connect.Client.Contracts;
+using AndroidX.Health.Connect.Client.Records;
+using AndroidX.Health.Connect.Client.Records.Metadata;
+using AndroidX.Health.Connect.Client.Request;
+using AndroidX.Health.Connect.Client.Time;
+using AndroidX.Health.Connect.Client.Response;
+using Java.Time;
+using Kotlin.Coroutines;
+using Kotlin.Jvm;
 using Shiny.Hosting;
-using NativeDataType = Android.Gms.Fitness.Data.DataType;
 
 namespace Shiny.Health;
 
 
-public class HealthService : IHealthService, IAndroidLifecycle.IOnActivityResult
+public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidLifecycle.IOnActivityResult
 {
     const int REQUEST_CODE = 8765;
-    readonly AndroidPlatform platform;
+    TaskCompletionSource<bool>? permissionTcs;
 
 
-    public HealthService(AndroidPlatform platform)
+    IHealthConnectClient GetClient()
+        => IHealthConnectClient.GetOrCreate(platform.AppContext);
+
+
+    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
     {
-        this.platform = platform;
+        var client = GetClient();
+        var neededPermissions = dataTypes.SelectMany(ToPermissionStrings).Distinct().ToList();
+
+        var granted = await GetGrantedPermissionsAsync(client).ConfigureAwait(false);
+        if (neededPermissions.All(granted.Contains))
+            return dataTypes.Select(x => (x, true));
+
+        permissionTcs = new TaskCompletionSource<bool>();
+        var contract = new HealthPermissionsRequestContract();
+        var intent = contract.CreateIntentImpl(platform.AppContext, neededPermissions);
+        platform.CurrentActivity.StartActivityForResult(intent, REQUEST_CODE);
+        await permissionTcs.Task.ConfigureAwait(false);
+
+        granted = await GetGrantedPermissionsAsync(client).ConfigureAwait(false);
+        return dataTypes.Select(dt =>
+        {
+            var perms = ToPermissionStrings(dt);
+            return (dt, perms.All(granted.Contains));
+        });
     }
 
 
-    public Task<IList<NumericHealthResult>> GetAverageHeartRate(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
-        => this.Query(
-            NativeDataType.AggregateHeartRateSummary,
-            NativeDataType.TypeHeartRateBpm,
-            start,
-            end,
-            interval,
-            (dp, st, end) =>
+    public void Handle(Activity activity, int requestCode, Result resultCode, Intent data)
+    {
+        if (requestCode == REQUEST_CODE)
+            permissionTcs?.TrySetResult(true);
+    }
+
+
+    public Task<IList<NumericHealthResult>> GetStepCounts(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryAggregate(
+            start, end, interval,
+            StepsRecord.CountTotal!,
+            DataType.StepCount,
+            result =>
             {
-                var field = dp.DataType.Fields.First();
-                var value = dp.GetValue(field).AsFloat();
-                return new NumericHealthResult(DataType.Calories, st, end, value);
-            }
+                if (result is Java.Lang.Long l) return l.LongValue();
+                if (result is Java.Lang.Number n) return n.DoubleValue();
+                return 0;
+            },
+            cancelToken
+        );
+
+
+    public Task<IList<NumericHealthResult>> GetAverageHeartRate(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryAggregate(
+            start, end, interval,
+            HeartRateRecord.BpmAvg!,
+            DataType.HeartRate,
+            result =>
+            {
+                if (result is Java.Lang.Long l) return l.LongValue();
+                if (result is Java.Lang.Number n) return n.DoubleValue();
+                return 0;
+            },
+            cancelToken
         );
 
 
     public Task<IList<NumericHealthResult>> GetCalories(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
-        => this.Query(
-            NativeDataType.AggregateCaloriesExpended,
-            NativeDataType.TypeCaloriesExpended,
-            start,
-            end,
-            interval,
-            (dp, st, end) =>
+        => QueryAggregate(
+            start, end, interval,
+            TotalCaloriesBurnedRecord.EnergyTotal!,
+            DataType.Calories,
+            result =>
             {
-                var field = dp.DataType.Fields.First();
-                var value = dp.GetValue(field).AsFloat();
-                return new NumericHealthResult(DataType.Calories, st, end, value);
-            }
+                if (result is AndroidX.Health.Connect.Client.Units.Energy energy)
+                    return energy.Kilocalories;
+                if (result is Java.Lang.Number n) return n.DoubleValue();
+                return 0;
+            },
+            cancelToken
         );
 
 
     public Task<IList<NumericHealthResult>> GetDistances(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
-        => this.Query(
-            NativeDataType.AggregateDistanceDelta,
-            NativeDataType.TypeDistanceDelta,
-            start,
-            end,
-            interval,
-            (dp, st, end) =>
+        => QueryAggregate(
+            start, end, interval,
+            DistanceRecord.DistanceTotal!,
+            DataType.Distance,
+            result =>
             {
-                var field = dp.DataType.Fields.First();
-                var value = dp.GetValue(field).AsFloat();
-                return new NumericHealthResult(DataType.Distance, st, end, value);
-            }
+                if (result is AndroidX.Health.Connect.Client.Units.Length length)
+                    return length.Meters;
+                if (result is Java.Lang.Number n) return n.DoubleValue();
+                return 0;
+            },
+            cancelToken
         );
 
 
-    public Task<IList<NumericHealthResult>> GetStepCounts(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
-        => this.Query(
-            NativeDataType.AggregateStepCountDelta,
-            NativeDataType.TypeStepCountDelta,
-            start,
-            end,
-            interval,
-            (dp, st, end) =>
+    public Task<IList<NumericHealthResult>> GetWeight(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryAggregate(
+            start, end, interval,
+            WeightRecord.WeightAvg!,
+            DataType.Weight,
+            result =>
             {
-                var field = dp.DataType.Fields.First();
-                var value = dp.GetValue(field).AsInt();
-                return new NumericHealthResult(DataType.StepCount, st, end, value);
-            }
+                if (result is AndroidX.Health.Connect.Client.Units.Mass mass)
+                    return mass.Kilograms;
+                if (result is Java.Lang.Number n) return n.DoubleValue();
+                return 0;
+            },
+            cancelToken
         );
 
 
-    TaskCompletionSource<bool>? permissionRequest;
-    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
-    {
-        if (this.IsAuthorizedInternal(dataTypes))
-            return dataTypes.Select(x => (x, false));
-
-        this.permissionRequest = new();
-        //using var _ = cancelToken.Register(() => this.permissionRequest.TrySetCanceled());
-
-        //<uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
-        var options = this.ToFitnessOptions(dataTypes);
-        GoogleSignIn.RequestPermissions(
-            this.platform.CurrentActivity,
-            REQUEST_CODE,
-            GoogleSignIn.GetLastSignedInAccount(this.platform.AppContext),
-            options
+    public Task<IList<NumericHealthResult>> GetHeight(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryAggregate(
+            start, end, interval,
+            HeightRecord.HeightAvg!,
+            DataType.Height,
+            result =>
+            {
+                if (result is AndroidX.Health.Connect.Client.Units.Length length)
+                    return length.Meters;
+                if (result is Java.Lang.Number n) return n.DoubleValue();
+                return 0;
+            },
+            cancelToken
         );
-        var result = await this.permissionRequest.Task.ConfigureAwait(false);
-        return dataTypes.Select(x => (x, result));
-    }
 
 
-    protected bool IsAuthorizedInternal(params DataType[] dataTypes)
-    {
-        var result = false;
-        if (this.IsGooglePlayServicesAvailable())
-        {
-            var options = this.ToFitnessOptions(dataTypes);
-            result = GoogleSignIn.HasPermissions(
-                GoogleSignIn.GetLastSignedInAccount(this.platform.CurrentActivity),
-                options
-            );
-        }
-        return result;
-    }
+    public Task<IList<NumericHealthResult>> GetBodyFatPercentage(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryInstantaneousRecords<BodyFatRecord>(
+            start, end, interval,
+            DataType.BodyFatPercentage,
+            record => record.Percentage.Value,
+            record => record.Time,
+            cancelToken
+        );
 
 
-    protected FitnessOptions ToFitnessOptions(DataType[] dataTypes)
-    {
-        var options = FitnessOptions.InvokeBuilder();
-
-        foreach (var dataType in dataTypes)
-        {
-            var type = dataType switch
+    public Task<IList<NumericHealthResult>> GetRestingHeartRate(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryAggregate(
+            start, end, interval,
+            RestingHeartRateRecord.BpmAvg!,
+            DataType.RestingHeartRate,
+            result =>
             {
-                DataType.Calories => NativeDataType.AggregateCaloriesExpended,
-                DataType.Distance => NativeDataType.AggregateDistanceDelta,
-                DataType.HeartRate => NativeDataType.AggregateHeartRateSummary,
-                DataType.StepCount => NativeDataType.AggregateStepCountDelta
-            };
-            options.AddDataType(type, FitnessOptions.AccessRead);
-        }
-        return options.Build();
-    }
+                if (result is Java.Lang.Long l) return l.LongValue();
+                if (result is Java.Lang.Number n) return n.DoubleValue();
+                return 0;
+            },
+            cancelToken
+        );
 
 
-    bool IsGooglePlayServicesAvailable()
+    public async Task<IList<BloodPressureResult>> GetBloodPressure(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
     {
-        var googleApi = GoogleApiAvailability.Instance;
-        var status = googleApi.IsGooglePlayServicesAvailable(this.platform.CurrentActivity);
+        var client = GetClient();
+        var startInstant = Instant.OfEpochMilli(start.ToUnixTimeMilliseconds())!;
+        var endInstant = Instant.OfEpochMilli(end.ToUnixTimeMilliseconds())!;
+        var duration = ToDuration(interval);
 
-        return status == ConnectionResult.Success;
-    }
-
-
-    const string SIGNIN_STATUS = "googleSignInStatus";
-    public void Handle(Activity activity, int requestCode, Result resultCode, Intent data)
-    {
-        if (data.HasExtra(SIGNIN_STATUS))
+        var metrics = new List<AggregateMetric>
         {
-            var status = (Statuses)data.GetParcelableExtra(SIGNIN_STATUS, Java.Lang.Class.FromType(typeof(Statuses)))!;
-            switch (status.StatusCode)
-            {
-                case GoogleSignInStatusCodes.SignInCurrentlyInProgress:
-                case GoogleSignInStatusCodes.Success:
-                    break;
+            BloodPressureRecord.SystolicAvg!,
+            BloodPressureRecord.DiastolicAvg!
+        };
+        var emptyOrigins = new List<DataOrigin>();
 
-                default:
-                    this.permissionRequest?.TrySetException(new InvalidOperationException("Google Fit Setup Issue: " + status));
-                    break;
-            }
-        }
-        if (requestCode == REQUEST_CODE)
-            this.permissionRequest?.TrySetResult(resultCode == Result.Ok);
-    }
+        var request = new AggregateGroupByDurationRequest(
+            metrics,
+            TimeRangeFilter.Between(startInstant, endInstant),
+            duration,
+            emptyOrigins
+        );
 
-    async Task<IList<T>> Query<T>(
-        NativeDataType aggregation,
-        NativeDataType dataType,
-        DateTimeOffset start,
-        DateTimeOffset end,
-        Interval interval,
-        Func<DataPoint, DateTimeOffset, DateTimeOffset, T> transform
-    )
-    {
-        var timeUnit = ToNative(interval);
-        var unixStart = Math.Abs(start.ToUnixTimeSeconds());
-        var unixEnd = Math.Abs(end.ToUnixTimeSeconds());
-        var readRequest = new DataReadRequest.Builder()
-            .Aggregate(dataType, aggregation)
-            .BucketByTime(1, timeUnit)
-            .SetTimeRange(unixStart, unixEnd, timeUnit)
-            .Build();
+        var response = await CallSuspendAsync(
+            cont => client.AggregateGroupByDuration(request, cont)
+        ).ConfigureAwait(false);
 
-        var list = new List<T>();
-        var dataReadResponse = await FitnessClass
-            .GetHistoryClient(this.platform.CurrentActivity, null)!
-            .ReadDataAsync(readRequest)
-            .ConfigureAwait(false);
-
-        if (dataReadResponse.Buckets.Count > 0)
+        var javaList = (System.Collections.IList)response;
+        var list = new List<BloodPressureResult>();
+        foreach (var item in javaList)
         {
-            foreach (var bucket in dataReadResponse.Buckets)
-            {
-                foreach (var dataSet in bucket.DataSets)
-                {
-                    foreach (var dp in dataSet.DataPoints)
-                    {
-                        var dstart = DateTimeOffset.FromUnixTimeMilliseconds(dp.GetStartTime(TimeUnit.Milliseconds));
-                        var dend = DateTimeOffset.FromUnixTimeMilliseconds(dp.GetEndTime(TimeUnit.Milliseconds));
-                        var item = transform.Invoke(dp, dstart, dend);
-
-                        list.Add(item);
-                    }
-                }
-            }
+            var bucket = (AggregationResultGroupedByDuration)item!;
+            var sysRaw = bucket.Result.Get(BloodPressureRecord.SystolicAvg!);
+            var diaRaw = bucket.Result.Get(BloodPressureRecord.DiastolicAvg!);
+            var systolic = ExtractPressure(sysRaw);
+            var diastolic = ExtractPressure(diaRaw);
+            var bucketStart = DateTimeOffset.FromUnixTimeMilliseconds(bucket.StartTime.ToEpochMilli());
+            var bucketEnd = DateTimeOffset.FromUnixTimeMilliseconds(bucket.EndTime.ToEpochMilli());
+            list.Add(new BloodPressureResult(bucketStart, bucketEnd, systolic, diastolic));
         }
         return list;
     }
 
-    static TimeUnit ToNative(Interval interval) => interval switch
+
+    public Task<IList<NumericHealthResult>> GetOxygenSaturation(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryInstantaneousRecords<OxygenSaturationRecord>(
+            start, end, interval,
+            DataType.OxygenSaturation,
+            record => record.Percentage.Value,
+            record => record.Time,
+            cancelToken
+        );
+
+
+    public Task<IList<NumericHealthResult>> GetSleepDuration(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryAggregate(
+            start, end, interval,
+            SleepSessionRecord.SleepDurationTotal!,
+            DataType.SleepDuration,
+            result =>
+            {
+                if (result is Duration d) return d.ToMillis() / 3600000.0;
+                if (result is Java.Lang.Long l) return l.LongValue() / 3600000.0;
+                if (result is Java.Lang.Number n) return n.DoubleValue() / 3600000.0;
+                return 0;
+            },
+            cancelToken
+        );
+
+
+    public Task<IList<NumericHealthResult>> GetHydration(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
+        => QueryAggregate(
+            start, end, interval,
+            HydrationRecord.VolumeTotal!,
+            DataType.Hydration,
+            result =>
+            {
+                if (result is AndroidX.Health.Connect.Client.Units.Volume volume)
+                    return volume.Liters;
+                if (result is Java.Lang.Number n) return n.DoubleValue();
+                return 0;
+            },
+            cancelToken
+        );
+
+
+    static double ExtractPressure(Java.Lang.Object? raw)
     {
-        Interval.Days => TimeUnit.Days!,
-        Interval.Hours => TimeUnit.Hours!,
-        Interval.Minutes => TimeUnit.Minutes!,
-        _ => throw new InvalidOperationException("Invalid Interval")
+        if (raw is AndroidX.Health.Connect.Client.Units.Pressure p)
+            return p.MillimetersOfMercury;
+        if (raw is Java.Lang.Number n)
+            return n.DoubleValue();
+        return 0;
+    }
+
+
+    static Duration ToDuration(Interval interval) => interval switch
+    {
+        Interval.Minutes => Duration.OfMinutes(1)!,
+        Interval.Hours => Duration.OfHours(1)!,
+        Interval.Days => Duration.OfDays(1)!,
+        _ => throw new InvalidOperationException("Invalid interval")
     };
+
+
+    async Task<IList<NumericHealthResult>> QueryAggregate(
+        DateTimeOffset start,
+        DateTimeOffset end,
+        Interval interval,
+        AggregateMetric metric,
+        DataType dataType,
+        Func<Java.Lang.Object?, double> extractValue,
+        CancellationToken cancelToken)
+    {
+        var client = GetClient();
+        var startInstant = Instant.OfEpochMilli(start.ToUnixTimeMilliseconds())!;
+        var endInstant = Instant.OfEpochMilli(end.ToUnixTimeMilliseconds())!;
+        var duration = ToDuration(interval);
+
+        var metrics = new List<AggregateMetric> { metric };
+        var emptyOrigins = new List<DataOrigin>();
+
+        var request = new AggregateGroupByDurationRequest(
+            metrics,
+            TimeRangeFilter.Between(startInstant, endInstant),
+            duration,
+            emptyOrigins
+        );
+
+        var response = await CallSuspendAsync(
+            cont => client.AggregateGroupByDuration(request, cont)
+        ).ConfigureAwait(false);
+
+        var javaList = (System.Collections.IList)response;
+        var list = new List<NumericHealthResult>();
+        foreach (var item in javaList)
+        {
+            var bucket = (AggregationResultGroupedByDuration)item!;
+            var rawValue = bucket.Result.Get(metric);
+            var value = extractValue(rawValue);
+            var bucketStart = DateTimeOffset.FromUnixTimeMilliseconds(bucket.StartTime.ToEpochMilli());
+            var bucketEnd = DateTimeOffset.FromUnixTimeMilliseconds(bucket.EndTime.ToEpochMilli());
+            list.Add(new NumericHealthResult(dataType, bucketStart, bucketEnd, value));
+        }
+        return list;
+    }
+
+
+    async Task<IList<NumericHealthResult>> QueryInstantaneousRecords<TRecord>(
+        DateTimeOffset start,
+        DateTimeOffset end,
+        Interval interval,
+        DataType dataType,
+        Func<TRecord, double> extractValue,
+        Func<TRecord, Instant> extractTime,
+        CancellationToken cancelToken) where TRecord : Java.Lang.Object
+    {
+        var client = GetClient();
+        var startInstant = Instant.OfEpochMilli(start.ToUnixTimeMilliseconds())!;
+        var endInstant = Instant.OfEpochMilli(end.ToUnixTimeMilliseconds())!;
+
+        var javaClass = Java.Lang.Class.FromType(typeof(TRecord));
+        var kClass = JvmClassMappingKt.GetKotlinClass(javaClass);
+        var request = new ReadRecordsRequest(
+            kClass,
+            TimeRangeFilter.Between(startInstant, endInstant),
+            new List<DataOrigin>(),
+            true,
+            10000,
+            null!
+        );
+
+        var response = await CallSuspendAsync(
+            cont => client.ReadRecords(request, cont)
+        ).ConfigureAwait(false);
+
+        var readResponse = (ReadRecordsResponse)response;
+        var records = new List<(DateTimeOffset Time, double Value)>();
+        foreach (var item in readResponse.Records)
+        {
+            var record = (TRecord)item!;
+            var time = extractTime(record);
+            var dto = DateTimeOffset.FromUnixTimeMilliseconds(time.ToEpochMilli());
+            records.Add((dto, extractValue(record)));
+        }
+
+        var buckets = GenerateBuckets(start, end, interval);
+        var list = new List<NumericHealthResult>();
+        foreach (var (bucketStart, bucketEnd) in buckets)
+        {
+            var bucketRecords = records.Where(r => r.Time >= bucketStart && r.Time < bucketEnd).ToList();
+            var value = bucketRecords.Count > 0 ? bucketRecords.Average(r => r.Value) : 0;
+            list.Add(new NumericHealthResult(dataType, bucketStart, bucketEnd, value));
+        }
+        return list;
+    }
+
+
+    static List<(DateTimeOffset Start, DateTimeOffset End)> GenerateBuckets(DateTimeOffset start, DateTimeOffset end, Interval interval)
+    {
+        var buckets = new List<(DateTimeOffset, DateTimeOffset)>();
+        var current = start;
+        while (current < end)
+        {
+            var next = interval switch
+            {
+                Interval.Minutes => current.AddMinutes(1),
+                Interval.Hours => current.AddHours(1),
+                Interval.Days => current.AddDays(1),
+                _ => throw new InvalidOperationException("Invalid interval")
+            };
+            if (next > end) next = end;
+            buckets.Add((current, next));
+            current = next;
+        }
+        return buckets;
+    }
+
+
+    static string[] ToPermissionStrings(DataType dataType) => dataType switch
+    {
+        DataType.StepCount => ["android.permission.health.READ_STEPS"],
+        DataType.HeartRate => ["android.permission.health.READ_HEART_RATE"],
+        DataType.Calories => ["android.permission.health.READ_TOTAL_ENERGY_BURNED"],
+        DataType.Distance => ["android.permission.health.READ_DISTANCE"],
+        DataType.Weight => ["android.permission.health.READ_WEIGHT"],
+        DataType.Height => ["android.permission.health.READ_HEIGHT"],
+        DataType.BodyFatPercentage => ["android.permission.health.READ_BODY_FAT"],
+        DataType.RestingHeartRate => ["android.permission.health.READ_RESTING_HEART_RATE"],
+        DataType.BloodPressure => ["android.permission.health.READ_BLOOD_PRESSURE"],
+        DataType.OxygenSaturation => ["android.permission.health.READ_OXYGEN_SATURATION"],
+        DataType.SleepDuration => ["android.permission.health.READ_SLEEP"],
+        DataType.Hydration => ["android.permission.health.READ_HYDRATION"],
+        _ => throw new InvalidOperationException("Invalid DataType")
+    };
+
+
+    async Task<HashSet<string>> GetGrantedPermissionsAsync(IHealthConnectClient client)
+    {
+        var result = await CallSuspendAsync(
+            cont => client.PermissionController.GetGrantedPermissions(cont)
+        ).ConfigureAwait(false);
+
+        var set = new HashSet<string>();
+        if (result is System.Collections.IEnumerable enumerable)
+        {
+            foreach (var item in enumerable)
+                set.Add(item?.ToString()!);
+        }
+        return set;
+    }
+
+
+    static Task<Java.Lang.Object> CallSuspendAsync(Func<IContinuation, Java.Lang.Object?> suspendFunction)
+    {
+        var tcs = new TaskCompletionSource<Java.Lang.Object>();
+        var continuation = new SuspendContinuation(tcs);
+        var immediateResult = suspendFunction(continuation);
+
+        if (immediateResult != null && !IsCoroutineSuspended(immediateResult))
+            tcs.TrySetResult(immediateResult);
+
+        return tcs.Task;
+    }
+
+
+    static bool IsCoroutineSuspended(Java.Lang.Object value)
+    {
+        return value.Class?.Name == "kotlin.coroutines.intrinsics.CoroutineSingletons";
+    }
+
+
+    sealed class SuspendContinuation : Java.Lang.Object, IContinuation
+    {
+        readonly TaskCompletionSource<Java.Lang.Object> tcs;
+
+        public SuspendContinuation(TaskCompletionSource<Java.Lang.Object> tcs) => this.tcs = tcs;
+
+        public ICoroutineContext Context => EmptyCoroutineContext.Instance;
+
+        public void ResumeWith(Java.Lang.Object result)
+        {
+            try
+            {
+                tcs.TrySetResult(result);
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetException(ex);
+            }
+        }
+    }
 }
-
-
-
-//protected FitnessOptions ToFitnessOptions(Permission[] permissions)
-//{
-//    var options = FitnessOptions.InvokeBuilder();
-
-//    foreach (var permission in permissions)
-//    {
-//        if (permission.Type == PermissionType.Read || permission.Type == PermissionType.Both)
-//            options.AddDataType(permission.Metric.DataType, FitnessOptions.AccessRead);
-
-//        if (permission.Type == PermissionType.Write || permission.Type == PermissionType.Both)
-//            options.AddDataType(permission.Metric.DataType, FitnessOptions.AccessWrite);
-//    }
-//    //switch (permission.Kind)
-//    //{
-//    //    case HealthInfoKind.Steps:
-//    //        options
-//    //            .AddDataType(DataType.TypeStepCountCumulative, direction)
-//    //            .AddDataType(DataType.TypeStepCountDelta, direction);
-//    //        break;
-
-//    //    case HealthInfoKind.Distances:
-//    //        options.AddDataType(DataType.TypeDistanceDelta, direction);
-//    //        break;
-
-//    //    case HealthInfoKind.Calories:
-//    //        options.AddDataType(DataType.TypeCaloriesExpended, direction);
-//    //        break;
-
-//    //    case HealthInfoKind.HeartRate:
-//    //        options.AddDataType(DataType.TypeHeartRateBpm, direction);
-//    //        break;
-//    //}
-//    //}
-//    return options.Build();
-//}
-
-//public class DataPointListener : Java.Lang.Object, IOnDataPointListener
-//{
-//    readonly TaskCompletionSource<DataPoint> onDataPoint;
-//    public DataPointListener(TaskCompletionSource<DataPoint> onDataPoint) => this.onDataPoint = onDataPoint;
-//    public void OnDataPoint(DataPoint dataPoint) => this.onDataPoint.SetResult(dataPoint);
-//}
-
-// for writing
-//var client = FitnessClass
-// .GetRecordingClient(
-//     act,
-//     GoogleSignIn.GetLastSignedInAccount(act)
-// );
-
-//public IObservable<T> Monitor<T>(HealthMetric<T> metric) => Observable.Create<T>(ob =>
-//{
-//    var act = this.platform.CurrentActivity;
-//    var listener = new DataPointListener(dp =>
-//    {
-//        var value = metric.FromNative(dp);
-//        ob.OnNext(value);
-//    });
-
-//    var client = FitnessClass.GetSensorsClient(act, GoogleSignIn.GetLastSignedInAccount(act));
-
-//    client
-//        .AddAsync(
-//            new SensorRequest.Builder()
-//                .SetDataType(metric.DataType)
-//                .SetSamplingRate(10, TimeUnit.Seconds)
-//                .Build(),
-//            listener
-//        )
-//        .ContinueWith(x =>
-//        {
-//            if (x.Exception != null)
-//                ob.OnError(x.Exception);
-//        });
-
-//    return () => client.Remove(listener);
-//});
-
-
-//public Task<bool> IsAuthorized(params Permission[] permissions)
-//    => Task.FromResult(this.IsAuthorizedInternal(permissions));
-
-
-//void Google()
-//{
-//    var apiClient = new GoogleApiClient.Builder(this.platform.CurrentActivity)
-//        .AddApi(FitnessClass.SENSORS_API)
-//        .UseDefaultAccount()
-//        .AddScope(FitnessClass.ScopeActivityRead)
-//        .AddConnectionCallbacks(bundle =>
-//        {
-//            //if (data.HasExtra(SIGNIN_STATUS))
-//            //{
-//            //    var status = (Statuses)data.GetParcelableExtra(SIGNIN_STATUS, Java.Lang.Class.FromType(typeof(Statuses)))!;
-//            //    switch (status.StatusCode)
-//            //    {
-//            //        case GoogleSignInStatusCodes.SignInCurrentlyInProgress:
-//            //        case GoogleSignInStatusCodes.Success:
-//            //            break;
-
-//            //        default:
-//            //            this.permissionRequest?.TrySetException(new InvalidOperationException("Google Fit Setup Issue: " + status));
-//            //            break;
-//            //    }
-//            //}
-//            //if (requestCode == REQUEST_CODE)
-//            //    this.permissionRequest?.TrySetResult(resultCode == Result.Ok);
-//        })
-//        .AddOnConnectionFailedListener(result =>
-//        {
-
-//        })
-//        //.AddScope(FitnessClass.ScopeActivityReadWrite) 
-//        .Build();
-
-//    apiClient.Connect();
-
-//    //.AddConnectionCallbacks()
-//}
-//    /*
-//    public class MyActivity extends FragmentActivity
-//                 implements ConnectionCallbacks, OnConnectionFailedListener, OnDataPointListener {
-//            private static final int REQUEST_OAUTH = 1001;
-//            private GoogleApiClient mGoogleApiClient;
-
-//            @Override
-//            protected void onCreate(@Nullable Bundle savedInstanceState) {
-//                super.onCreate(savedInstanceState);
-
-//                // Create a Google Fit Client instance with default user account.
-//                mGoogleApiClient = new GoogleApiClient.Builder(this)
-//                        .addApi(Fitness.SENSORS_API)  // Required for SensorsApi calls
-//                        // Optional: specify more APIs used with additional calls to addApi
-//                        .useDefaultAccount()
-//                        .addScope(Fitness.SCOPE_ACTIVITY_READ_WRITE)
-//                        .addConnectionCallbacks(this)
-//                        .addOnConnectionFailedListener(this)
-//                        .build();
-
-//                mGoogleApiClient.connect();
-//            }
-
-//            @Override
-//            public void onConnected(Bundle connectionHint) {
-//                // Connected to Google Fit Client.
-//                Fitness.SensorsApi.add(
-//                        mGoogleApiClient,
-//                        new SensorRequest.Builder()
-//                                .setDataType(DataType.STEP_COUNT_DELTA)
-//                                .build(),
-//                        this);
-//            }
-
-//            @Override
-//            public void onDataPoint(DataPoint dataPoint) {
-//                // Do cool stuff that matters.
-//            }
-
-//            @Override
-//            public void onConnectionSuspended(int cause) {
-//                // The connection has been interrupted. Wait until onConnected() is called.
-//            }
-
-//            @Override
-//            public void onConnectionFailed(ConnectionResult result) {
-//                // Error while connecting. Try to resolve using the pending intent returned.
-//                if (result.getErrorCode() == FitnessStatusCodes.NEEDS_OAUTH_PERMISSIONS) {
-//                    try {
-//                        result.startResolutionForResult(this, REQUEST_OAUTH);
-//                    } catch (SendIntentException e) {
-//                    }
-//                }
-//            }
-
-//            @Override
-//            public void onActivityResult(int requestCode, int resultCode, Intent data) {
-//                if (requestCode == REQUEST_OAUTH && resultCode == RESULT_OK) {
-//                    mGoogleApiClient.connect();
-//                }
-//            } 
-//     */
-//    //        .useDefaultAccount()
-//    //.addScope(Fitness.SCOPE_ACTIVITY_READ_WRITE)
-
-
-
-
-//public AccessState GetCurrentStatus(Permission permission)
-//{
-//    throw new NotImplementedException();
-//}

@@ -1,65 +1,117 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:sample="clr-namespace:Sample"
              xmlns:health="clr-namespace:Shiny.Health;assembly=Shiny.Health"
              x:DataType="sample:ListViewModel"
              x:Class="Sample.ListPage"
-             Title="{Binding Title}">
+             Title="{Binding Title}"
+             BackgroundColor="{StaticResource Background}">
 
-  <StackLayout HorizontalOptions="FillAndExpand"
-               VerticalOptions="FillAndExpand">
+    <Grid RowDefinitions="Auto, *" Padding="16" RowSpacing="16">
 
-        <Grid RowDefinitions="Auto, Auto, Auto"
-              ColumnDefinitions="1*, 2*, 2*">
+        <!-- Filter Card -->
+        <Border StrokeShape="RoundRectangle 12"
+                StrokeThickness="0"
+                BackgroundColor="{StaticResource Surface}"
+                Padding="16"
+                Grid.Row="0"
+                Shadow="{OnPlatform Default={Shadow Brush='{StaticResource Gray300Brush}', Offset='0,2', Radius=8, Opacity=0.3}}">
+            <VerticalStackLayout Spacing="12">
+                <Label Text="Time Range"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" />
 
-            <Label Text="Start Date"
-                   Grid.Column="0"
-                   Grid.Row="0" />
+                <Grid RowDefinitions="Auto, Auto"
+                      ColumnDefinitions="Auto, *, *"
+                      ColumnSpacing="8"
+                      RowSpacing="8">
 
-            <DatePicker Date="{Binding DateStart}"
-                        Grid.Column="1"
-                        Grid.Row="0" />
+                    <Label Text="From"
+                           VerticalOptions="Center"
+                           TextColor="{StaticResource TextSecondary}"
+                           Grid.Row="0" Grid.Column="0" />
+                    <DatePicker Date="{Binding DateStart}"
+                                TextColor="{StaticResource TextPrimary}"
+                                Grid.Row="0" Grid.Column="1" />
+                    <TimePicker Time="{Binding TimeStart}"
+                                TextColor="{StaticResource TextPrimary}"
+                                Grid.Row="0" Grid.Column="2" />
 
-            <TimePicker Time="{Binding TimeStart}"
-                        Grid.Column="2"
-                        Grid.Row="0" />
+                    <Label Text="To"
+                           VerticalOptions="Center"
+                           TextColor="{StaticResource TextSecondary}"
+                           Grid.Row="1" Grid.Column="0" />
+                    <DatePicker Date="{Binding DateEnd}"
+                                TextColor="{StaticResource TextPrimary}"
+                                Grid.Row="1" Grid.Column="1" />
+                    <TimePicker Time="{Binding TimeEnd}"
+                                TextColor="{StaticResource TextPrimary}"
+                                Grid.Row="1" Grid.Column="2" />
+                </Grid>
 
-            <Label Text="End Date"
-                   Grid.Column="0"
-                   Grid.Row="1" />
+                <Button Text="Run Query"
+                        Command="{Binding LoadCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="8"
+                        HeightRequest="44" />
+            </VerticalStackLayout>
+        </Border>
 
-            <DatePicker Date="{Binding DateEnd}"
-                        Grid.Column="1"
-                        Grid.Row="1" />
-
-            <TimePicker Time="{Binding TimeEnd}"
-                        Grid.Column="2"
-                        Grid.Row="1" />
-        </Grid>
-
-        <Button Text="Run Query"
-                Command="{Binding Load}" />
-
+        <!-- Results List -->
         <CollectionView ItemsSource="{Binding Data}"
-                        HorizontalOptions="FillAndExpand"
-                        VerticalOptions="FillAndExpand">
+                        Grid.Row="1">
             <CollectionView.EmptyView>
-                <Label Text="No Items" />
+                <VerticalStackLayout VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="8"
+                                     Padding="40">
+                    <Label Text="No Data"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center" />
+                    <Label Text="Select a time range and run a query"
+                           FontSize="14"
+                           TextColor="{StaticResource TextMuted}"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
             </CollectionView.EmptyView>
 
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="health:NumericHealthResult">
-                    <StackLayout Padding="0,5">
-                        <StackLayout Orientation="Horizontal" Spacing="5">
-                            <Label FontAttributes="Bold" Text="{Binding Start, StringFormat='{0:MM/dd/yyyy a\\t h:mm tt}'}" />
-                            <Label FontAttributes="Bold" Text="to" />
-                            <Label FontAttributes="Bold" Text="{Binding End, StringFormat='{0:MM/dd/yyyy a\\t h:mm tt}'}" />
-                        </StackLayout>
-                        <Label Text="{Binding Value, StringFormat='Value: {0}'}" />
-                    </StackLayout>
+                    <Border StrokeShape="RoundRectangle 10"
+                            StrokeThickness="0"
+                            BackgroundColor="{StaticResource Surface}"
+                            Padding="14"
+                            Margin="0,0,0,8"
+                            Shadow="{OnPlatform Default={Shadow Brush='{StaticResource Gray300Brush}', Offset='0,1', Radius=4, Opacity=0.15}}">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <VerticalStackLayout Spacing="2" Grid.Column="0">
+                                <Label FontSize="12"
+                                       TextColor="{StaticResource TextMuted}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding Start, StringFormat='{0:MMM dd, h:mm tt}'}" />
+                                            <Span Text=" - " />
+                                            <Span Text="{Binding End, StringFormat='{0:h:mm tt}'}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </VerticalStackLayout>
+                            <Label Text="{Binding Value, StringFormat='{0:N1}'}"
+                                   FontSize="20"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"
+                                   VerticalOptions="Center"
+                                   Grid.Column="1" />
+                        </Grid>
+                    </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
-    </StackLayout>
+    </Grid>
 </ContentPage>

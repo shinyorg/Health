@@ -1,83 +1,94 @@
-﻿using Shiny.Health;
+using System.Collections.ObjectModel;
 
 namespace Sample;
 
 
-public class ListViewModel : ViewModel
+[ShellMap<ListPage>("List")]
+public partial class ListViewModel(
+    INavigator navigator,
+    IHealthService health
+) : ObservableObject, IQueryAttributable
 {
     DataType type;
 
-	public ListViewModel(BaseServices services, IHealthService health) : base(services)
-	{
-        this.DateStart = DateTime.Now.AddDays(-1);
-        this.DateEnd = DateTime.Now;
+    [ObservableProperty]
+    string? title;
 
-        this.Load = ReactiveCommand.CreateFromTask(
-            async () =>
-            {
-                var start = this.DateStart.Date.Add(this.TimeStart);
-                var end = this.DateEnd.Date.Add(this.TimeEnd);
+    [ObservableProperty]
+    DateTime dateStart = DateTime.Now.AddDays(-1);
 
-                switch (this.type)
-                {
-                    case DataType.StepCount:
-                        this.Data = (await health.GetStepCounts(start, end, Interval.Hours))
-                            .Cast<object>()
-                            .ToList();
-                        break;
+    [ObservableProperty]
+    TimeSpan timeStart;
 
-                    case DataType.HeartRate:
-                        this.Data = (await health.GetAverageHeartRate(start, end, Interval.Hours))
-                            .Cast<object>()
-                            .ToList();
-                        break;
+    [ObservableProperty]
+    DateTime dateEnd = DateTime.Now;
 
-                    case DataType.Calories:
-                        this.Data = (await health.GetCalories(start, end, Interval.Hours))
-                            .Cast<object>()
-                            .ToList();
-                        break;
+    [ObservableProperty]
+    TimeSpan timeEnd;
 
-                    case DataType.Distance:
-                        this.Data = (await health.GetDistances(start, end, Interval.Hours))
-                            .Cast<object>()
-                            .ToList();
-                        break;
-                }
-            }
-        );
-	}
+    [ObservableProperty]
+    bool isBusy;
+
+    [ObservableProperty]
+    ObservableCollection<NumericHealthResult> data = [];
 
 
-    public ICommand Load { get; }
-
-    [Reactive] public DateTime DateStart { get; set; }
-    [Reactive] public TimeSpan TimeStart { get; set; }
-    [Reactive] public DateTime DateEnd { get; set; }
-    [Reactive] public TimeSpan TimeEnd { get; set; }
-    [Reactive] public IList<object> Data { get; private set; }
-
-    public override void OnNavigatedTo(INavigationParameters parameters)
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        this.type = parameters.GetValue<DataType>("Type");
-        switch (this.type)
+        if (query.TryGetValue("Type", out var val) && val is DataType dt)
         {
-            case DataType.Calories:
-                this.Title = "Total Calories";
-                break;
-
-            case DataType.Distance:
-                this.Title = "Total Distance";
-                break;
-
-            case DataType.HeartRate:
-                this.Title = "Average Heart Rate";
-                break;
-
-            case DataType.StepCount:
-                this.Title = "Total Steps";
-                break;
+            type = dt;
+            Title = type switch
+            {
+                DataType.Calories => "Total Calories",
+                DataType.Distance => "Total Distance",
+                DataType.HeartRate => "Average Heart Rate",
+                DataType.StepCount => "Total Steps",
+                DataType.Weight => "Average Weight (kg)",
+                DataType.Height => "Average Height (m)",
+                DataType.BodyFatPercentage => "Body Fat %",
+                DataType.RestingHeartRate => "Resting Heart Rate",
+                DataType.OxygenSaturation => "O2 Saturation %",
+                DataType.SleepDuration => "Sleep Duration (hrs)",
+                DataType.Hydration => "Hydration (L)",
+                _ => type.ToString()
+            };
         }
-        this.Load.Execute(null);
+    }
+
+
+    [RelayCommand]
+    async Task LoadAsync()
+    {
+        if (IsBusy) return;
+
+        try
+        {
+            IsBusy = true;
+            var start = DateStart.Date.Add(TimeStart);
+            var end = DateEnd.Date.Add(TimeEnd);
+
+            IList<NumericHealthResult> results = type switch
+            {
+                DataType.StepCount => await health.GetStepCounts(start, end, Interval.Hours),
+                DataType.HeartRate => await health.GetAverageHeartRate(start, end, Interval.Hours),
+                DataType.Calories => await health.GetCalories(start, end, Interval.Hours),
+                DataType.Distance => await health.GetDistances(start, end, Interval.Hours),
+                DataType.Weight => await health.GetWeight(start, end, Interval.Hours),
+                DataType.Height => await health.GetHeight(start, end, Interval.Hours),
+                DataType.BodyFatPercentage => await health.GetBodyFatPercentage(start, end, Interval.Hours),
+                DataType.RestingHeartRate => await health.GetRestingHeartRate(start, end, Interval.Hours),
+                DataType.OxygenSaturation => await health.GetOxygenSaturation(start, end, Interval.Hours),
+                DataType.SleepDuration => await health.GetSleepDuration(start, end, Interval.Hours),
+                DataType.Hydration => await health.GetHydration(start, end, Interval.Hours),
+                _ => []
+            };
+
+            Data = new ObservableCollection<NumericHealthResult>(results);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 }
