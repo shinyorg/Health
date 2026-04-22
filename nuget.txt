@@ -1,8 +1,8 @@
-﻿-----
-Shiny
------
+﻿--------------
+Shiny Health
+--------------
 
-GitHub: https://github.com/shinyorg/Shiny
+GitHub: https://github.com/shinyorg/health
 Docs: https://shinylib.net
 Blog: https://shinylib.net/blog
 

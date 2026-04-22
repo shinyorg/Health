@@ -1,0 +1,26 @@
+{
+  "name": "shiny-health",
+  "version": "1.0.0",
+  "description": "Claude Code plugin for Shiny Health - cross-platform health data queries for Apple HealthKit and Android Health Connect in .NET MAUI",
+  "author": {
+    "name": "Shiny",
+    "email": "hello@shinylib.net",
+    "url": "https://shinylib.net"
+  },
+  "homepage": "https://github.com/shinyorg/health",
+  "repository": "https://github.com/shinyorg/health",
+  "license": "MIT",
+  "keywords": [
+    "dotnet",
+    "maui",
+    "health",
+    "healthkit",
+    "health-connect",
+    "apple-health",
+    "android",
+    "ios",
+    "cross-platform",
+    "mobile"
+  ],
+  "skills": "./skills/"
+}

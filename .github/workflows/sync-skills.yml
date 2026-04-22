@@ -1,0 +1,61 @@
+name: Sync Skills to Skills Repository
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'skills/**'
+  workflow_dispatch:
+
+jobs:
+  sync-skills:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Checkout skills repository
+        uses: actions/checkout@v4
+        with:
+          repository: shinyorg/skills
+          token: ${{ secrets.SKILLS_REPO_TOKEN }}
+          path: skills-repo
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync skills directory
+        run: |
+          # Copy skills content to the shiny-client plugin in the skills repo
+          if [ -d "source/skills/shiny-health" ]; then
+            # Remove existing skill directory to ensure clean sync
+            rm -rf skills-repo/plugins/shiny-client/skills/shiny-health
+            mkdir -p skills-repo/plugins/shiny-client/skills
+            cp -r source/skills/shiny-health skills-repo/plugins/shiny-client/skills/
+          fi
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.SKILLS_REPO_TOKEN }}
+          path: skills-repo
+          commit-message: "Update shiny-health skill from Shiny Health repository"
+          title: "Update shiny-health skill"
+          body: |
+            This PR updates the shiny-health skill from the [Shiny Health repository](https://github.com/shinyorg/health).
+
+            **Source commit:** ${{ github.sha }}
+            **Triggered by:** @${{ github.actor }}
+            ---
+            *This PR was automatically created by the [sync-skills workflow](https://github.com/shinyorg/health/actions/workflows/sync-skills.yml).*
+          branch: update-shiny-health-skill
+          delete-branch: true
+          labels: |
+            automated
+            skills-update

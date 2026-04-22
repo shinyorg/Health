@@ -1,0 +1,14 @@
+{
+  "name": "shiny-plugins",
+  "owner": {
+    "name": "Shiny",
+    "email": "hello@shinylib.net"
+  },
+  "plugins": [
+    {
+      "name": "shiny-health",
+      "source": "./",
+      "description": "Claude Code plugin for Shiny Health - cross-platform health data queries for Apple HealthKit and Android Health Connect in .NET MAUI"
+    }
+  ]
+}
