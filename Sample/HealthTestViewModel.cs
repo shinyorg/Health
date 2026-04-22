@@ -142,7 +142,15 @@ public partial class HealthTestViewModel(
     [RelayCommand]
     async Task NavToList(string dataTypeName)
     {
-        var type = Enum.Parse<DataType>(dataTypeName);
-        await navigator.NavigateTo("List", args: [("Type", type)]);
+        try
+        {
+            var type = Enum.Parse<DataType>(dataTypeName);
+            await navigator.NavigateTo("List", args: [("Type", type)]);
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
+            OnPropertyChanged(nameof(HasError));
+        }
     }
 }

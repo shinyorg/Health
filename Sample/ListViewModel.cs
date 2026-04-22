@@ -57,6 +57,9 @@ public partial class ListViewModel(
     }
 
 
+    [ObservableProperty]
+    string? errorText;
+
     [RelayCommand]
     async Task LoadAsync()
     {
@@ -65,6 +68,7 @@ public partial class ListViewModel(
         try
         {
             IsBusy = true;
+            ErrorText = null;
             var start = DateStart.Date.Add(TimeStart);
             var end = DateEnd.Date.Add(TimeEnd);
 
@@ -85,6 +89,10 @@ public partial class ListViewModel(
             };
 
             Data = new ObservableCollection<NumericHealthResult>(results);
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
         }
         finally
         {

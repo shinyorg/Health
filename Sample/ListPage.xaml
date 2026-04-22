@@ -15,8 +15,10 @@
                 StrokeThickness="0"
                 BackgroundColor="{StaticResource Surface}"
                 Padding="16"
-                Grid.Row="0"
-                Shadow="{OnPlatform Default={Shadow Brush='{StaticResource Gray300Brush}', Offset='0,2', Radius=8, Opacity=0.3}}">
+                Grid.Row="0">
+            <Border.Shadow>
+                <Shadow Brush="{StaticResource Gray300Brush}" Offset="0,2" Radius="8" Opacity="0.3" />
+            </Border.Shadow>
             <VerticalStackLayout Spacing="12">
                 <Label Text="Time Range"
                        FontSize="16"
@@ -87,8 +89,10 @@
                             StrokeThickness="0"
                             BackgroundColor="{StaticResource Surface}"
                             Padding="14"
-                            Margin="0,0,0,8"
-                            Shadow="{OnPlatform Default={Shadow Brush='{StaticResource Gray300Brush}', Offset='0,1', Radius=4, Opacity=0.15}}">
+                            Margin="0,0,0,8">
+                        <Border.Shadow>
+                            <Shadow Brush="{StaticResource Gray300Brush}" Offset="0,1" Radius="4" Opacity="0.15" />
+                        </Border.Shadow>
                         <Grid ColumnDefinitions="*, Auto">
                             <VerticalStackLayout Spacing="2" Grid.Column="0">
                                 <Label FontSize="12"
