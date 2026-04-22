@@ -17,8 +17,10 @@
                 <Border StrokeShape="RoundRectangle 12"
                         StrokeThickness="0"
                         BackgroundColor="{StaticResource Surface}"
-                        Padding="16"
-                        Shadow="{OnPlatform Default={Shadow Brush='{StaticResource Gray300Brush}', Offset='0,2', Radius=8, Opacity=0.3}}">
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{StaticResource Gray300Brush}" Offset="0,2" Radius="8" Opacity="0.3" />
+                    </Border.Shadow>
                     <VerticalStackLayout Spacing="12">
                         <Label Text="Date Range"
                                FontSize="16"

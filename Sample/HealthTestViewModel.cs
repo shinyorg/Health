@@ -1,4 +1,4 @@
-namespace Sample;
+﻿namespace Sample;
 
 
 [ShellMap<HealthTestPage>(registerRoute: false)]
@@ -61,11 +61,7 @@ public partial class HealthTestViewModel(
     public bool HasError => !string.IsNullOrEmpty(ErrorText);
 
 
-    public async void OnAppearing()
-    {
-        await LoadDataAsync();
-    }
-
+    public void OnAppearing() => _ = LoadDataAsync();
     public void OnDisappearing() { }
 
 

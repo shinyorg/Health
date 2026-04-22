@@ -12,7 +12,7 @@
         <MauiVersion>10.0.51</MauiVersion>
 
         <ApplicationTitle>Shiny Health</ApplicationTitle>
-        <ApplicationId>org.shiny.health</ApplicationId>
+        <ApplicationId>org.shiny.healthsample</ApplicationId>
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
 

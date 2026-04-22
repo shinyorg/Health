@@ -1,10 +1,8 @@
-namespace Sample;
+﻿namespace Sample;
 
 public partial class App : Application
 {
-    public App()
-    {
-        this.InitializeComponent();
-        this.MainPage = new AppShell();
-    }
+    public App() => this.InitializeComponent();
+    protected override Window CreateWindow(IActivationState? activationState)
+        => new(new AppShell());
 }
