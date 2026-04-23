@@ -4,10 +4,11 @@ Apple HealthKit and Android Health Connect for your .NET MAUI apps.
 
 ## Features
 * Read summary values between timestamps at specified intervals
+* Write health data to Apple HealthKit and Android Health Connect
 * Query distance, step count, calories, and heart rate
 * Query weight, height, body fat percentage, and resting heart rate
 * Query blood pressure (systolic/diastolic), oxygen saturation, sleep duration, and hydration
-* Permission management for both platforms
+* Permission management for both platforms with read/write support
 
 ## How To Use
 
@@ -52,6 +53,23 @@ var bp = await health.GetBloodPressure(start, end, Interval.Days); // BloodPress
 // lifestyle
 var sleep = (await health.GetSleepDuration(start, end, Interval.Days)).Sum(x => x.Value); // hours
 var water = (await health.GetHydration(start, end, Interval.Days)).Sum(x => x.Value); // liters
+
+// --- Writing Data ---
+
+// request write permissions
+await health.RequestPermissions(PermissionType.Write, DataType.Weight, DataType.StepCount, DataType.Hydration);
+
+// write a weight measurement
+await health.Write(new NumericHealthResult(DataType.Weight, DateTimeOffset.Now, DateTimeOffset.Now, 75.0)); // kg
+
+// write step counts over a time range
+await health.Write(new NumericHealthResult(DataType.StepCount, start, end, 500));
+
+// write hydration
+await health.Write(new NumericHealthResult(DataType.Hydration, start, end, 0.5)); // liters
+
+// write blood pressure
+await health.Write(new BloodPressureResult(DateTimeOffset.Now, DateTimeOffset.Now, 120.0, 80.0)); // mmHg
 ```
 
 ## Supported Metrics
@@ -127,7 +145,7 @@ Android uses [Health Connect](https://developer.android.com/health-and-fitness/h
 #### AndroidManifest.xml
 
 ```xml
-<!-- Required: declare which health data your app reads -->
+<!-- Required: declare which health data your app reads/writes -->
 <uses-permission android:name="android.permission.health.READ_STEPS" />
 <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
 <uses-permission android:name="android.permission.health.READ_TOTAL_ENERGY_BURNED" />
@@ -141,6 +159,20 @@ Android uses [Health Connect](https://developer.android.com/health-and-fitness/h
 <uses-permission android:name="android.permission.health.READ_SLEEP" />
 <uses-permission android:name="android.permission.health.READ_HYDRATION" />
 <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+<!-- Optional: declare which health data your app writes -->
+<uses-permission android:name="android.permission.health.WRITE_STEPS" />
+<uses-permission android:name="android.permission.health.WRITE_HEART_RATE" />
+<uses-permission android:name="android.permission.health.WRITE_TOTAL_ENERGY_BURNED" />
+<uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
+<uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
+<uses-permission android:name="android.permission.health.WRITE_HEIGHT" />
+<uses-permission android:name="android.permission.health.WRITE_BODY_FAT" />
+<uses-permission android:name="android.permission.health.WRITE_RESTING_HEART_RATE" />
+<uses-permission android:name="android.permission.health.WRITE_BLOOD_PRESSURE" />
+<uses-permission android:name="android.permission.health.WRITE_OXYGEN_SATURATION" />
+<uses-permission android:name="android.permission.health.WRITE_SLEEP" />
+<uses-permission android:name="android.permission.health.WRITE_HYDRATION" />
 
 <!-- Required: allow your app to discover Health Connect -->
 <queries>

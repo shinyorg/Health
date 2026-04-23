@@ -1,6 +1,6 @@
 ---
 name: shiny-health
-description: Generate cross-platform health data queries using Shiny Health for Apple HealthKit and Android Health Connect
+description: Generate cross-platform health data queries and write health data using Shiny Health for Apple HealthKit and Android Health Connect
 auto_invoke: true
 triggers:
   - health data
@@ -39,20 +39,29 @@ triggers:
   - GetSleepDuration
   - GetHydration
   - RequestPermissions
+  - PermissionType
+  - write health
+  - write steps
+  - write weight
+  - write calories
+  - log health
+  - save health
+  - record health
   - AddHealthIntegration
   - Shiny.Health
 ---
 
 # Shiny Health Skill
 
-You are an expert in Shiny Health, a .NET MAUI library that provides a unified API for querying health data from Apple HealthKit (iOS) and Android Health Connect.
+You are an expert in Shiny Health, a .NET MAUI library that provides a unified API for reading and writing health data from Apple HealthKit (iOS) and Android Health Connect.
 
 ## When to Use This Skill
 
 Invoke this skill when the user wants to:
 - Query health metrics (steps, heart rate, calories, distance, weight, height, body fat, blood pressure, oxygen saturation, sleep, hydration)
+- Write/log health data (steps, weight, hydration, blood pressure, etc.)
 - Set up health data access in a .NET MAUI application
-- Request health data permissions on iOS or Android
+- Request health data permissions (read and/or write) on iOS or Android
 - Work with time-bucketed health data aggregations
 - Understand which health metrics are available cross-platform
 - Configure iOS HealthKit entitlements or Android Health Connect permissions
@@ -65,9 +74,9 @@ Invoke this skill when the user wants to:
 
 Shiny Health provides:
 - A single `IHealthService` interface that works on both iOS and Android
+- Read and write support for all 12 cross-platform health metrics
 - Time-bucketed aggregate queries at minute, hour, or day intervals
-- 12 cross-platform health metrics
-- Permission management for both platforms
+- Permission management with read/write granularity via `PermissionType`
 - AOT-compatible implementation (no .NET reflection)
 
 ## Setup
@@ -136,6 +145,20 @@ Android uses Health Connect (the replacement for the deprecated Google Fit API).
 <uses-permission android:name="android.permission.health.READ_HYDRATION" />
 <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
+<!-- Optional: declare which health data your app writes (only include the types you need) -->
+<uses-permission android:name="android.permission.health.WRITE_STEPS" />
+<uses-permission android:name="android.permission.health.WRITE_HEART_RATE" />
+<uses-permission android:name="android.permission.health.WRITE_TOTAL_ENERGY_BURNED" />
+<uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
+<uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
+<uses-permission android:name="android.permission.health.WRITE_HEIGHT" />
+<uses-permission android:name="android.permission.health.WRITE_BODY_FAT" />
+<uses-permission android:name="android.permission.health.WRITE_RESTING_HEART_RATE" />
+<uses-permission android:name="android.permission.health.WRITE_BLOOD_PRESSURE" />
+<uses-permission android:name="android.permission.health.WRITE_OXYGEN_SATURATION" />
+<uses-permission android:name="android.permission.health.WRITE_SLEEP" />
+<uses-permission android:name="android.permission.health.WRITE_HYDRATION" />
+
 <!-- Allow your app to discover Health Connect -->
 <queries>
     <package android:name="com.google.android.apps.healthdata" />
@@ -151,6 +174,15 @@ Android uses Health Connect (the replacement for the deprecated Google Fit API).
 ### Core Types
 
 ```csharp
+// Permission type for read/write access
+[Flags]
+public enum PermissionType
+{
+    Read = 1,
+    Write = 2,
+    ReadWrite = Read | Write
+}
+
 // Time interval for bucketed queries
 public enum Interval { Minutes, Hours, Days }
 
@@ -184,8 +216,14 @@ public record BloodPressureResult(
 ```csharp
 public interface IHealthService
 {
-    // Request permissions for one or more data types
+    // Request read permissions (backward compatible)
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes);
+    // Request read, write, or both permissions
+    Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes);
+
+    // Write health data
+    Task Write(NumericHealthResult result, CancellationToken cancelToken = default);
+    Task Write(BloodPressureResult result, CancellationToken cancelToken = default);
 
     // Activity metrics
     Task<IList<NumericHealthResult>> GetStepCounts(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
@@ -321,6 +359,35 @@ public partial class HealthDashboardViewModel(IHealthService health) : Observabl
 }
 ```
 
+### Writing Health Data
+```csharp
+IHealthService health; // inject via DI
+
+// Request write permissions for the data types you need
+await health.RequestPermissions(PermissionType.Write, DataType.Weight, DataType.StepCount, DataType.Hydration);
+
+// Or request both read and write at once
+await health.RequestPermissions(PermissionType.ReadWrite, DataType.Weight);
+
+var now = DateTimeOffset.Now;
+
+// Write a weight measurement (point-in-time: Start == End)
+await health.Write(new NumericHealthResult(DataType.Weight, now, now, 75.0)); // kg
+
+// Write step counts over a time range
+await health.Write(new NumericHealthResult(DataType.StepCount, now.AddMinutes(-30), now, 500));
+
+// Write hydration
+await health.Write(new NumericHealthResult(DataType.Hydration, now.AddHours(-1), now, 0.5)); // liters
+
+// Write blood pressure
+await health.Write(new BloodPressureResult(now, now, 120.0, 80.0)); // mmHg
+
+// Write sleep session
+var sleepStart = now.AddHours(-8);
+await health.Write(new NumericHealthResult(DataType.SleepDuration, sleepStart, now, 0)); // Value is ignored, duration derived from Start/End
+```
+
 ## Platform Notes
 
 ### iOS
@@ -339,7 +406,7 @@ public partial class HealthDashboardViewModel(IHealthService health) : Observabl
 
 ## Best Practices
 
-1. **Always request permissions first** - Call `RequestPermissions` before querying data
+1. **Always request permissions first** - Call `RequestPermissions` before reading or writing data. Use `PermissionType.Write` or `PermissionType.ReadWrite` when writing
 2. **Use appropriate intervals** - Use `Interval.Days` for summaries, `Interval.Hours` for detailed breakdowns
 3. **Handle empty results** - Check `.Any()` before calling `.Average()` to avoid `InvalidOperationException`
 4. **Use CancellationToken** - Pass cancellation tokens for long-running queries

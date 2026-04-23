@@ -9,6 +9,10 @@ namespace Shiny.Health;
 public interface IHealthService
 {
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes);
+    Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes);
+
+    Task Write(NumericHealthResult result, CancellationToken cancelToken = default);
+    Task Write(BloodPressureResult result, CancellationToken cancelToken = default);
 
     Task<IList<NumericHealthResult>> GetCalories(
         DateTimeOffset start,

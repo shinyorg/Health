@@ -325,7 +325,10 @@ public class HealthService : IHealthService
         );
 
 
-    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
+    public Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
+        => RequestPermissions(PermissionType.Read, dataTypes);
+
+    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes)
     {
         var share = new NSMutableSet<HKSampleType>();
         var read = new NSMutableSet<HKObjectType>();
@@ -334,18 +337,35 @@ public class HealthService : IHealthService
         {
             if (dataType == DataType.SleepDuration)
             {
-                read.Add(HKCategoryType.Create(HKCategoryTypeIdentifier.SleepAnalysis)!);
+                var catType = HKCategoryType.Create(HKCategoryTypeIdentifier.SleepAnalysis)!;
+                if (permissionType.HasFlag(PermissionType.Read))
+                    read.Add(catType);
+                if (permissionType.HasFlag(PermissionType.Write))
+                    share.Add(catType);
             }
             else if (dataType == DataType.BloodPressure)
             {
-                read.Add(HKQuantityType.Create(HKQuantityTypeIdentifier.BloodPressureSystolic)!);
-                read.Add(HKQuantityType.Create(HKQuantityTypeIdentifier.BloodPressureDiastolic)!);
+                var sysType = HKQuantityType.Create(HKQuantityTypeIdentifier.BloodPressureSystolic)!;
+                var diaType = HKQuantityType.Create(HKQuantityTypeIdentifier.BloodPressureDiastolic)!;
+                if (permissionType.HasFlag(PermissionType.Read))
+                {
+                    read.Add(sysType);
+                    read.Add(diaType);
+                }
+                if (permissionType.HasFlag(PermissionType.Write))
+                {
+                    share.Add(sysType);
+                    share.Add(diaType);
+                }
             }
             else
             {
                 var native = ToNativeType(dataType);
                 var qtyType = HKQuantityType.Create(native)!;
-                read.Add(qtyType);
+                if (permissionType.HasFlag(PermissionType.Read))
+                    read.Add(qtyType);
+                if (permissionType.HasFlag(PermissionType.Write))
+                    share.Add(qtyType);
             }
         }
 
@@ -364,6 +384,80 @@ public class HealthService : IHealthService
             list.Add((dataType, good));
         }
         return list;
+    }
+
+
+    public async Task Write(NumericHealthResult result, CancellationToken cancelToken = default)
+    {
+        using var store = new HKHealthStore();
+
+        if (result.DataType == DataType.SleepDuration)
+        {
+            var catType = HKCategoryType.Create(HKCategoryTypeIdentifier.SleepAnalysis)!;
+            var sample = HKCategorySample.FromType(
+                catType,
+                (nint)3, // AsleepUnspecified
+                (NSDate)result.Start.LocalDateTime,
+                (NSDate)result.End.LocalDateTime
+            );
+            var sleepResult = await store.SaveObjectAsync(sample).ConfigureAwait(false);
+            if (!sleepResult.Item1)
+                throw new InvalidOperationException(sleepResult.Item2?.LocalizedDescription ?? "Failed to save sleep data");
+            return;
+        }
+
+        var native = ToNativeType(result.DataType);
+        var qtyType = HKQuantityType.Create(native)!;
+        var unit = GetUnit(result.DataType);
+        var value = result.DataType is DataType.BodyFatPercentage or DataType.OxygenSaturation
+            ? result.Value / 100.0
+            : result.Value;
+
+        var quantity = HKQuantity.FromQuantity(unit, value);
+        var quantitySample = HKQuantitySample.FromType(
+            qtyType,
+            quantity,
+            (NSDate)result.Start.LocalDateTime,
+            (NSDate)result.End.LocalDateTime
+        );
+        var saveResult = await store.SaveObjectAsync(quantitySample).ConfigureAwait(false);
+        if (!saveResult.Item1)
+            throw new InvalidOperationException(saveResult.Item2?.LocalizedDescription ?? "Failed to save health data");
+    }
+
+
+    public async Task Write(BloodPressureResult result, CancellationToken cancelToken = default)
+    {
+        using var store = new HKHealthStore();
+        var unit = HKUnit.MillimeterOfMercury;
+
+        var sysType = HKQuantityType.Create(HKQuantityTypeIdentifier.BloodPressureSystolic)!;
+        var diaType = HKQuantityType.Create(HKQuantityTypeIdentifier.BloodPressureDiastolic)!;
+
+        var sysSample = HKQuantitySample.FromType(
+            sysType,
+            HKQuantity.FromQuantity(unit, result.Systolic),
+            (NSDate)result.Start.LocalDateTime,
+            (NSDate)result.End.LocalDateTime
+        );
+        var diaSample = HKQuantitySample.FromType(
+            diaType,
+            HKQuantity.FromQuantity(unit, result.Diastolic),
+            (NSDate)result.Start.LocalDateTime,
+            (NSDate)result.End.LocalDateTime
+        );
+
+        var correlationType = HKCorrelationType.Create(HKCorrelationTypeIdentifier.BloodPressure)!;
+        var correlation = HKCorrelation.Create(
+            correlationType,
+            (NSDate)result.Start.LocalDateTime,
+            (NSDate)result.End.LocalDateTime,
+            new NSSet<HKSample>(sysSample, diaSample)
+        );
+
+        var saveResult = await store.SaveObjectAsync(correlation).ConfigureAwait(false);
+        if (!saveResult.Item1)
+            throw new InvalidOperationException(saveResult.Item2?.LocalizedDescription ?? "Failed to save blood pressure data");
     }
 
 
@@ -409,6 +503,22 @@ public class HealthService : IHealthService
         HKAuthorizationStatus.SharingDenied => AccessState.Denied,
         HKAuthorizationStatus.SharingAuthorized => AccessState.Available,
         _ => AccessState.Unknown
+    };
+
+
+    static HKUnit GetUnit(DataType dataType) => dataType switch
+    {
+        DataType.StepCount => HKUnit.Count,
+        DataType.HeartRate => HKUnit.Count.UnitDividedBy(HKUnit.Minute),
+        DataType.Calories => HKUnit.Kilocalorie,
+        DataType.Distance => HKUnit.Meter,
+        DataType.Weight => HKUnit.FromString("kg"),
+        DataType.Height => HKUnit.Meter,
+        DataType.BodyFatPercentage => HKUnit.Percent,
+        DataType.RestingHeartRate => HKUnit.Count.UnitDividedBy(HKUnit.Minute),
+        DataType.OxygenSaturation => HKUnit.Percent,
+        DataType.Hydration => HKUnit.Liter,
+        _ => throw new InvalidOperationException("Invalid Type")
     };
 
 

@@ -16,6 +16,7 @@ using AndroidX.Health.Connect.Client.Response;
 using Java.Time;
 using Kotlin.Coroutines;
 using Kotlin.Jvm;
+using Android.Runtime;
 using Shiny.Hosting;
 
 namespace Shiny.Health;
@@ -31,10 +32,18 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         => IHealthConnectClient.GetOrCreate(platform.AppContext);
 
 
-    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
+    public Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
+        => RequestPermissions(PermissionType.Read, dataTypes);
+
+    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes)
     {
         var client = GetClient();
-        var neededPermissions = dataTypes.SelectMany(ToPermissionStrings).Distinct().ToList();
+        var neededPermissions = new List<string>();
+        if (permissionType.HasFlag(PermissionType.Read))
+            neededPermissions.AddRange(dataTypes.SelectMany(ToReadPermissionStrings));
+        if (permissionType.HasFlag(PermissionType.Write))
+            neededPermissions.AddRange(dataTypes.SelectMany(ToWritePermissionStrings));
+        neededPermissions = neededPermissions.Distinct().ToList();
 
         var granted = await GetGrantedPermissionsAsync(client).ConfigureAwait(false);
         if (neededPermissions.All(granted.Contains))
@@ -49,7 +58,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         granted = await GetGrantedPermissionsAsync(client).ConfigureAwait(false);
         return dataTypes.Select(dt =>
         {
-            var perms = ToPermissionStrings(dt);
+            var perms = ToReadPermissionStrings(dt);
             return (dt, perms.All(granted.Contains));
         });
     }
@@ -265,6 +274,68 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         );
 
 
+    public async Task Write(NumericHealthResult result, CancellationToken cancelToken = default)
+    {
+        var client = GetClient();
+        var startInstant = Instant.OfEpochMilli(result.Start.ToUnixTimeMilliseconds())!;
+        var endInstant = Instant.OfEpochMilli(result.End.ToUnixTimeMilliseconds())!;
+        var zoneOffset = ZoneOffset.OfTotalSeconds((int)result.Start.Offset.TotalSeconds)!;
+        var metadata = Metadata.UnknownRecordingMethod();
+
+        Java.Lang.Object record = result.DataType switch
+        {
+            DataType.StepCount => new StepsRecord(startInstant, zoneOffset, endInstant, zoneOffset, (long)result.Value, metadata),
+            DataType.HeartRate => CreateHeartRateRecord(startInstant, zoneOffset, endInstant, (long)result.Value, metadata),
+            DataType.Calories => new TotalCaloriesBurnedRecord(startInstant, zoneOffset, endInstant, zoneOffset, AndroidX.Health.Connect.Client.Units.Energy.InvokeKilocalories(result.Value), metadata),
+            DataType.Distance => new DistanceRecord(startInstant, zoneOffset, endInstant, zoneOffset, AndroidX.Health.Connect.Client.Units.Length.InvokeMeters(result.Value), metadata),
+            DataType.Weight => new WeightRecord(startInstant, zoneOffset, AndroidX.Health.Connect.Client.Units.Mass.InvokeKilograms(result.Value), metadata),
+            DataType.Height => new HeightRecord(startInstant, zoneOffset, AndroidX.Health.Connect.Client.Units.Length.InvokeMeters(result.Value), metadata),
+            DataType.BodyFatPercentage => new BodyFatRecord(startInstant, zoneOffset, new AndroidX.Health.Connect.Client.Units.Percentage(result.Value), metadata),
+            DataType.RestingHeartRate => new RestingHeartRateRecord(startInstant, zoneOffset, (long)result.Value, metadata),
+            DataType.OxygenSaturation => new OxygenSaturationRecord(startInstant, zoneOffset, new AndroidX.Health.Connect.Client.Units.Percentage(result.Value), metadata),
+            DataType.SleepDuration => new SleepSessionRecord(startInstant, zoneOffset, endInstant, zoneOffset, metadata, null, null, new List<SleepSessionRecord.Stage>()),
+            DataType.Hydration => new HydrationRecord(startInstant, zoneOffset, endInstant, zoneOffset, AndroidX.Health.Connect.Client.Units.Volume.InvokeLiters(result.Value), metadata),
+            _ => throw new InvalidOperationException($"Unsupported data type for writing: {result.DataType}")
+        };
+
+        await InsertRecord(client, record).ConfigureAwait(false);
+    }
+
+
+    public async Task Write(BloodPressureResult result, CancellationToken cancelToken = default)
+    {
+        var client = GetClient();
+        var instant = Instant.OfEpochMilli(result.Start.ToUnixTimeMilliseconds())!;
+        var zoneOffset = ZoneOffset.OfTotalSeconds((int)result.Start.Offset.TotalSeconds)!;
+
+        var record = new BloodPressureRecord(
+            instant,
+            zoneOffset,
+            Metadata.UnknownRecordingMethod(),
+            AndroidX.Health.Connect.Client.Units.Pressure.InvokeMillimetersOfMercury(result.Systolic),
+            AndroidX.Health.Connect.Client.Units.Pressure.InvokeMillimetersOfMercury(result.Diastolic),
+            (int)BloodPressureRecord.BodyPositionUnknown,
+            (int)BloodPressureRecord.MeasurementLocationUnknown
+        );
+
+        await InsertRecord(client, (Java.Lang.Object)record).ConfigureAwait(false);
+    }
+
+
+    static HeartRateRecord CreateHeartRateRecord(Instant start, ZoneOffset offset, Instant end, long bpm, Metadata metadata)
+    {
+        var samples = new List<HeartRateRecord.Sample> { new HeartRateRecord.Sample(start, bpm) };
+        return new HeartRateRecord(start, offset, end, offset, samples, metadata);
+    }
+
+
+    async Task InsertRecord(IHealthConnectClient client, Java.Lang.Object record)
+    {
+        var records = new List<IRecord> { record.JavaCast<IRecord>() };
+        await CallSuspendAsync(cont => client.InsertRecords(records, cont)).ConfigureAwait(false);
+    }
+
+
     static double ExtractPressure(Java.Lang.Object? raw)
     {
         if (raw is AndroidX.Health.Connect.Client.Units.Pressure p)
@@ -398,7 +469,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
     }
 
 
-    static string[] ToPermissionStrings(DataType dataType) => dataType switch
+    static string[] ToReadPermissionStrings(DataType dataType) => dataType switch
     {
         DataType.StepCount => ["android.permission.health.READ_STEPS"],
         DataType.HeartRate => ["android.permission.health.READ_HEART_RATE"],
@@ -412,6 +483,24 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         DataType.OxygenSaturation => ["android.permission.health.READ_OXYGEN_SATURATION"],
         DataType.SleepDuration => ["android.permission.health.READ_SLEEP"],
         DataType.Hydration => ["android.permission.health.READ_HYDRATION"],
+        _ => throw new InvalidOperationException("Invalid DataType")
+    };
+
+
+    static string[] ToWritePermissionStrings(DataType dataType) => dataType switch
+    {
+        DataType.StepCount => ["android.permission.health.WRITE_STEPS"],
+        DataType.HeartRate => ["android.permission.health.WRITE_HEART_RATE"],
+        DataType.Calories => ["android.permission.health.WRITE_TOTAL_ENERGY_BURNED"],
+        DataType.Distance => ["android.permission.health.WRITE_DISTANCE"],
+        DataType.Weight => ["android.permission.health.WRITE_WEIGHT"],
+        DataType.Height => ["android.permission.health.WRITE_HEIGHT"],
+        DataType.BodyFatPercentage => ["android.permission.health.WRITE_BODY_FAT"],
+        DataType.RestingHeartRate => ["android.permission.health.WRITE_RESTING_HEART_RATE"],
+        DataType.BloodPressure => ["android.permission.health.WRITE_BLOOD_PRESSURE"],
+        DataType.OxygenSaturation => ["android.permission.health.WRITE_OXYGEN_SATURATION"],
+        DataType.SleepDuration => ["android.permission.health.WRITE_SLEEP"],
+        DataType.Hydration => ["android.permission.health.WRITE_HYDRATION"],
         _ => throw new InvalidOperationException("Invalid DataType")
     };
 

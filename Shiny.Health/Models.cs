@@ -2,6 +2,14 @@
 
 namespace Shiny.Health;
 
+[Flags]
+public enum PermissionType
+{
+    Read = 1,
+    Write = 2,
+    ReadWrite = Read | Write
+}
+
 public enum Interval
 {
     Minutes,
