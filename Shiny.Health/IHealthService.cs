@@ -10,6 +10,7 @@ public interface IHealthService
 {
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes);
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes);
+    Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params (PermissionType Permission, DataType Type)[] permissions);
 
     Task Write(NumericHealthResult result, CancellationToken cancelToken = default);
     Task Write(BloodPressureResult result, CancellationToken cancelToken = default);

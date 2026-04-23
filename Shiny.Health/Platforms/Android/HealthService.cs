@@ -35,19 +35,25 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
     public Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
         => RequestPermissions(PermissionType.Read, dataTypes);
 
-    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes)
+    public Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes)
+        => RequestPermissions(dataTypes.Select(dt => (permissionType, dt)).ToArray());
+
+    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params (PermissionType Permission, DataType Type)[] permissions)
     {
         var client = GetClient();
         var neededPermissions = new List<string>();
-        if (permissionType.HasFlag(PermissionType.Read))
-            neededPermissions.AddRange(dataTypes.SelectMany(ToReadPermissionStrings));
-        if (permissionType.HasFlag(PermissionType.Write))
-            neededPermissions.AddRange(dataTypes.SelectMany(ToWritePermissionStrings));
+        foreach (var (permissionType, dataType) in permissions)
+        {
+            if (permissionType.HasFlag(PermissionType.Read))
+                neededPermissions.AddRange(ToReadPermissionStrings(dataType));
+            if (permissionType.HasFlag(PermissionType.Write))
+                neededPermissions.AddRange(ToWritePermissionStrings(dataType));
+        }
         neededPermissions = neededPermissions.Distinct().ToList();
 
         var granted = await GetGrantedPermissionsAsync(client).ConfigureAwait(false);
         if (neededPermissions.All(granted.Contains))
-            return dataTypes.Select(x => (x, true));
+            return permissions.Select(x => (x.Type, true));
 
         permissionTcs = new TaskCompletionSource<bool>();
         var contract = new HealthPermissionsRequestContract();
@@ -56,10 +62,14 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         await permissionTcs.Task.ConfigureAwait(false);
 
         granted = await GetGrantedPermissionsAsync(client).ConfigureAwait(false);
-        return dataTypes.Select(dt =>
+        return permissions.Select(p =>
         {
-            var perms = ToReadPermissionStrings(dt);
-            return (dt, perms.All(granted.Contains));
+            var perms = new List<string>();
+            if (p.Permission.HasFlag(PermissionType.Read))
+                perms.AddRange(ToReadPermissionStrings(p.Type));
+            if (p.Permission.HasFlag(PermissionType.Write))
+                perms.AddRange(ToWritePermissionStrings(p.Type));
+            return (p.Type, perms.All(granted.Contains));
         });
     }
 

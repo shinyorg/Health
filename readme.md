@@ -15,20 +15,20 @@ Apple HealthKit and Android Health Connect for your .NET MAUI apps.
 ```csharp
 IHealthService health; // inject via DI
 
-// request permissions
+// request read permissions
 var result = await health.RequestPermissions(
     DataType.Calories,
     DataType.Distance,
     DataType.StepCount,
-    DataType.HeartRate,
-    DataType.Weight,
-    DataType.Height,
-    DataType.BodyFatPercentage,
-    DataType.RestingHeartRate,
-    DataType.BloodPressure,
-    DataType.OxygenSaturation,
-    DataType.SleepDuration,
-    DataType.Hydration
+    DataType.HeartRate
+);
+
+// request per-metric read/write permissions in a single call
+var result2 = await health.RequestPermissions(
+    (PermissionType.Read, DataType.StepCount),
+    (PermissionType.Read, DataType.HeartRate),
+    (PermissionType.Write, DataType.Weight),
+    (PermissionType.ReadWrite, DataType.BloodPressure)
 );
 
 var end = DateTimeOffset.Now;
@@ -56,8 +56,14 @@ var water = (await health.GetHydration(start, end, Interval.Days)).Sum(x => x.Va
 
 // --- Writing Data ---
 
-// request write permissions
+// request write permissions (uniform)
 await health.RequestPermissions(PermissionType.Write, DataType.Weight, DataType.StepCount, DataType.Hydration);
+
+// or mix read/write per metric
+await health.RequestPermissions(
+    (PermissionType.Write, DataType.Weight),
+    (PermissionType.ReadWrite, DataType.Hydration)
+);
 
 // write a weight measurement
 await health.Write(new NumericHealthResult(DataType.Weight, DateTimeOffset.Now, DateTimeOffset.Now, 75.0)); // kg

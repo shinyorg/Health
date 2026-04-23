@@ -218,8 +218,10 @@ public interface IHealthService
 {
     // Request read permissions (backward compatible)
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes);
-    // Request read, write, or both permissions
+    // Request read, write, or both permissions (uniform for all types)
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes);
+    // Request per-metric read/write permissions in a single call
+    Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params (PermissionType Permission, DataType Type)[] permissions);
 
     // Write health data
     Task Write(NumericHealthResult result, CancellationToken cancelToken = default);
@@ -270,12 +272,20 @@ public interface IHealthService
 ```csharp
 IHealthService health; // inject via DI
 
-// Request permissions for the data types you need
+// Request read permissions for the data types you need
 var result = await health.RequestPermissions(
     DataType.StepCount,
     DataType.HeartRate,
     DataType.Calories,
     DataType.Distance
+);
+
+// Or request per-metric read/write permissions in a single call
+var result2 = await health.RequestPermissions(
+    (PermissionType.Read, DataType.StepCount),
+    (PermissionType.Read, DataType.HeartRate),
+    (PermissionType.Write, DataType.Weight),
+    (PermissionType.ReadWrite, DataType.BloodPressure)
 );
 
 // Check which permissions were granted
@@ -368,6 +378,13 @@ await health.RequestPermissions(PermissionType.Write, DataType.Weight, DataType.
 
 // Or request both read and write at once
 await health.RequestPermissions(PermissionType.ReadWrite, DataType.Weight);
+
+// Or mix read/write per metric in a single call
+await health.RequestPermissions(
+    (PermissionType.Write, DataType.Weight),
+    (PermissionType.Write, DataType.StepCount),
+    (PermissionType.ReadWrite, DataType.Hydration)
+);
 
 var now = DateTimeOffset.Now;
 

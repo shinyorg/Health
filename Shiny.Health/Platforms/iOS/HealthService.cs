@@ -328,12 +328,15 @@ public class HealthService : IHealthService
     public Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
         => RequestPermissions(PermissionType.Read, dataTypes);
 
-    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes)
+    public Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes)
+        => RequestPermissions(dataTypes.Select(dt => (permissionType, dt)).ToArray());
+
+    public async Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params (PermissionType Permission, DataType Type)[] permissions)
     {
         var share = new NSMutableSet<HKSampleType>();
         var read = new NSMutableSet<HKObjectType>();
 
-        foreach (var dataType in dataTypes)
+        foreach (var (permissionType, dataType) in permissions)
         {
             if (dataType == DataType.SleepDuration)
             {
@@ -378,7 +381,7 @@ public class HealthService : IHealthService
             throw new InvalidOperationException(tuple.Item2.LocalizedDescription);
 
         var list = new List<(DataType, bool)>();
-        foreach (var dataType in dataTypes)
+        foreach (var (_, dataType) in permissions)
         {
             var good = GetCurrentStatus(dataType) == AccessState.Available;
             list.Add((dataType, good));
