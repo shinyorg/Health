@@ -140,59 +140,6 @@ public partial class HealthTestViewModel(
 
 
     [RelayCommand]
-    async Task WriteTestData()
-    {
-        try
-        {
-            IsBusy = true;
-            ErrorText = null;
-            OnPropertyChanged(nameof(HasError));
-
-            await health.RequestPermissions(
-                PermissionType.Write,
-                DataType.StepCount,
-                DataType.Hydration,
-                DataType.Weight
-            );
-
-            var now = DateTimeOffset.Now;
-
-            await health.Write(new NumericHealthResult(
-                DataType.StepCount,
-                now.AddMinutes(-30),
-                now,
-                500
-            ));
-
-            await health.Write(new NumericHealthResult(
-                DataType.Hydration,
-                now.AddMinutes(-15),
-                now,
-                0.5
-            ));
-
-            await health.Write(new NumericHealthResult(
-                DataType.Weight,
-                now,
-                now,
-                75.0
-            ));
-
-            await LoadDataAsync();
-        }
-        catch (Exception ex)
-        {
-            ErrorText = ex.Message;
-            OnPropertyChanged(nameof(HasError));
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-
-    [RelayCommand]
     async Task NavToList(string dataTypeName)
     {
         try

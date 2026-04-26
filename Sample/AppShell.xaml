@@ -6,7 +6,14 @@
                   xmlns:local="clr-namespace:Sample"
                   Title="Shiny Health">
 
-    <ShellContent ContentTemplate="{DataTemplate local:HealthTestPage}"
-                  Route="HealthTest" />
+    <TabBar>
+        <ShellContent Title="Dashboard"
+                      ContentTemplate="{DataTemplate local:HealthTestPage}"
+                      Route="HealthTest" />
+
+        <ShellContent Title="Write Data"
+                      ContentTemplate="{DataTemplate local:WritePage}"
+                      Route="Write" />
+    </TabBar>
 
 </shiny:ShinyShell>

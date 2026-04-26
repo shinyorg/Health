@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sample="clr-namespace:Sample"
+             x:DataType="sample:WriteViewModel"
+             x:Class="Sample.WritePage"
+             Title="Write Health Data"
+             BackgroundColor="{StaticResource Background}">
+
+    <ScrollView Padding="16">
+        <VerticalStackLayout Spacing="16">
+
+            <!-- Data Type Selection -->
+            <Border StrokeShape="RoundRectangle 12"
+                    StrokeThickness="0"
+                    BackgroundColor="{StaticResource Surface}"
+                    Padding="16">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource Gray300Brush}" Offset="0,2" Radius="8" Opacity="0.3" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Data Type"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}" />
+
+                    <Picker Title="Select a metric"
+                            ItemsSource="{Binding DataTypes}"
+                            SelectedItem="{Binding SelectedDataType}"
+                            TextColor="{StaticResource TextPrimary}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Error Banner -->
+            <Border StrokeShape="RoundRectangle 8"
+                    StrokeThickness="0"
+                    BackgroundColor="#FEF2F2"
+                    Padding="12"
+                    IsVisible="{Binding HasError}">
+                <Label Text="{Binding ErrorText}"
+                       TextColor="{StaticResource Accent}"
+                       FontSize="14" />
+            </Border>
+
+            <!-- Success Banner -->
+            <Border StrokeShape="RoundRectangle 8"
+                    StrokeThickness="0"
+                    BackgroundColor="#F0FDF4"
+                    Padding="12"
+                    IsVisible="{Binding ShowSuccess}">
+                <Label Text="Data written successfully!"
+                       TextColor="#16A34A"
+                       FontSize="14" />
+            </Border>
+
+            <!-- Value Entry (non-blood pressure) -->
+            <Border StrokeShape="RoundRectangle 12"
+                    StrokeThickness="0"
+                    BackgroundColor="{StaticResource Surface}"
+                    Padding="16"
+                    IsVisible="{Binding IsNumericType}">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource Gray300Brush}" Offset="0,2" Radius="8" Opacity="0.3" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Value"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}" />
+
+                    <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                        <Entry Text="{Binding ValueText}"
+                               Placeholder="Enter value"
+                               Keyboard="Numeric"
+                               TextColor="{StaticResource TextPrimary}"
+                               PlaceholderColor="{StaticResource TextMuted}"
+                               Grid.Column="0" />
+                        <Label Text="{Binding UnitLabel}"
+                               FontSize="14"
+                               TextColor="{StaticResource TextSecondary}"
+                               VerticalOptions="Center"
+                               Grid.Column="1" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Blood Pressure Entry -->
+            <Border StrokeShape="RoundRectangle 12"
+                    StrokeThickness="0"
+                    BackgroundColor="{StaticResource Surface}"
+                    Padding="16"
+                    IsVisible="{Binding IsBloodPressureType}">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource Gray300Brush}" Offset="0,2" Radius="8" Opacity="0.3" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Blood Pressure"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}" />
+
+                    <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                        <Entry Text="{Binding SystolicText}"
+                               Placeholder="Systolic"
+                               Keyboard="Numeric"
+                               TextColor="{StaticResource TextPrimary}"
+                               PlaceholderColor="{StaticResource TextMuted}"
+                               Grid.Column="0" />
+                        <Label Text="mmHg"
+                               FontSize="14"
+                               TextColor="{StaticResource TextSecondary}"
+                               VerticalOptions="Center"
+                               Grid.Column="1" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                        <Entry Text="{Binding DiastolicText}"
+                               Placeholder="Diastolic"
+                               Keyboard="Numeric"
+                               TextColor="{StaticResource TextPrimary}"
+                               PlaceholderColor="{StaticResource TextMuted}"
+                               Grid.Column="0" />
+                        <Label Text="mmHg"
+                               FontSize="14"
+                               TextColor="{StaticResource TextSecondary}"
+                               VerticalOptions="Center"
+                               Grid.Column="1" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Write Button -->
+            <Button Text="Write Data"
+                    Command="{Binding WriteCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="8"
+                    HeightRequest="44"
+                    IsEnabled="{Binding IsNotBusy}" />
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               Color="{StaticResource Primary}"
+                               HorizontalOptions="Center" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
