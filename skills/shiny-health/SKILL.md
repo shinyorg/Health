@@ -1,6 +1,6 @@
 ---
 name: shiny-health
-description: Generate cross-platform health data queries and write health data using Shiny Health for Apple HealthKit and Android Health Connect
+description: Generate cross-platform health data queries, write health data, and observe real-time health changes using Shiny Health for Apple HealthKit and Android Health Connect
 auto_invoke: true
 triggers:
   - health data
@@ -47,6 +47,12 @@ triggers:
   - log health
   - save health
   - record health
+  - Observe
+  - observe health
+  - monitor health
+  - watch health
+  - real-time health
+  - health changes
   - AddHealthIntegration
   - Shiny.Health
 ---
@@ -60,6 +66,7 @@ You are an expert in Shiny Health, a .NET MAUI library that provides a unified A
 Invoke this skill when the user wants to:
 - Query health metrics (steps, heart rate, calories, distance, weight, height, body fat, blood pressure, oxygen saturation, sleep, hydration)
 - Write/log health data (steps, weight, hydration, blood pressure, etc.)
+- Observe real-time health data changes (e.g., monitor step counts or heart rate as they are recorded)
 - Set up health data access in a .NET MAUI application
 - Request health data permissions (read and/or write) on iOS or Android
 - Work with time-bucketed health data aggregations
@@ -75,6 +82,7 @@ Invoke this skill when the user wants to:
 Shiny Health provides:
 - A single `IHealthService` interface that works on both iOS and Android
 - Read and write support for all 12 cross-platform health metrics
+- Real-time observation of health data changes via `IAsyncEnumerable<HealthResult>`
 - Time-bucketed aggregate queries at minute, hour, or day intervals
 - Permission management with read/write granularity via `PermissionType`
 - AOT-compatible implementation (no .NET reflection)
@@ -216,6 +224,10 @@ public record BloodPressureResult(
 ```csharp
 public interface IHealthService
 {
+    // Observe real-time health data changes (forward-only, yields new samples as recorded)
+    // iOS: push-based HKAnchoredObjectQuery; Android: polls Health Connect change tokens
+    IAsyncEnumerable<HealthResult> Observe(DataType dataType, TimeSpan? pollingInterval = null, CancellationToken cancelToken = default);
+
     // Request read permissions (backward compatible)
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes);
     // Request read, write, or both permissions (uniform for all types)
@@ -405,9 +417,36 @@ var sleepStart = now.AddHours(-8);
 await health.Write(new NumericHealthResult(DataType.SleepDuration, sleepStart, now, 0)); // Value is ignored, duration derived from Start/End
 ```
 
+### Observing Real-Time Health Data
+```csharp
+IHealthService health; // inject via DI
+
+// Request read permission for the data type you want to observe
+await health.RequestPermissions(DataType.StepCount);
+
+// Observe step count changes in real time using IAsyncEnumerable
+// Use a CancellationTokenSource to stop observation when done
+using var cts = new CancellationTokenSource();
+
+await foreach (var result in health.Observe(DataType.StepCount, cancelToken: cts.Token))
+{
+    // result is a HealthResult — cast to NumericHealthResult for value
+    if (result is NumericHealthResult numeric)
+        Console.WriteLine($"Steps: {numeric.Value} ({numeric.Start:t} - {numeric.End:t})");
+}
+
+// On Android, you can customize the polling interval (default 5s, ignored on iOS)
+await foreach (var result in health.Observe(DataType.HeartRate, pollingInterval: TimeSpan.FromSeconds(10), cancelToken: cts.Token))
+{
+    if (result is NumericHealthResult numeric)
+        Console.WriteLine($"Heart rate: {numeric.Value} bpm");
+}
+```
+
 ## Platform Notes
 
 ### iOS
+- `Observe` uses `HKAnchoredObjectQuery` for push-based real-time updates (no polling needed)
 - HealthKit requires a real device (not simulator) for most data types
 - `RequestPermissions` on iOS does NOT tell you if the user denied access (Apple privacy policy) - it may return `true` even when denied
 - Sleep data uses `HKCategoryTypeIdentifier.SleepAnalysis` (category type, not quantity type) - the library handles this internally
@@ -415,6 +454,7 @@ await health.Write(new NumericHealthResult(DataType.SleepDuration, sleepStart, n
 - Percentage values (body fat, O2 saturation) are returned as 0-100, not 0-1
 
 ### Android
+- `Observe` uses Health Connect change tokens with polling (default 5s interval, configurable via `pollingInterval` parameter)
 - The Health Connect app must be installed on the device
 - Body fat percentage and oxygen saturation use `ReadRecords` instead of aggregate queries (Health Connect does not provide aggregate metrics for these types)
 - Sleep duration uses `SleepSessionRecord.SleepDurationTotal` aggregate metric, returning hours
