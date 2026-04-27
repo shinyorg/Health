@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
 using AndroidX.Health.Connect.Client;
 using AndroidX.Health.Connect.Client.Aggregate;
+using AndroidX.Health.Connect.Client.Changes;
 using AndroidX.Health.Connect.Client.Contracts;
 using AndroidX.Health.Connect.Client.Records;
 using AndroidX.Health.Connect.Client.Records.Metadata;
@@ -78,6 +81,171 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
     {
         if (requestCode == REQUEST_CODE)
             permissionTcs?.TrySetResult(true);
+    }
+
+
+    public async IAsyncEnumerable<HealthResult> Observe(
+        DataType dataType,
+        TimeSpan? pollingInterval = null,
+        [EnumeratorCancellation] CancellationToken cancelToken = default)
+    {
+        var interval = pollingInterval ?? TimeSpan.FromSeconds(5);
+        var channel = Channel.CreateUnbounded<HealthResult>(new UnboundedChannelOptions { SingleWriter = true });
+        var client = GetClient();
+        var recordKClass = GetRecordKClass(dataType);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var kClass = JvmClassMappingKt.GetKotlinClass(recordKClass);
+                var tokenRequest = new ChangesTokenRequest(
+                    new List<Kotlin.Reflect.IKClass> { kClass },
+                    new List<DataOrigin>()
+                );
+                var tokenResponse = await CallSuspendAsync(
+                    cont => client.GetChangesToken(tokenRequest, cont)
+                ).ConfigureAwait(false);
+                var token = tokenResponse.ToString()!;
+
+                while (!cancelToken.IsCancellationRequested)
+                {
+                    await Task.Delay(interval, cancelToken).ConfigureAwait(false);
+
+                    var changesResponse = await CallSuspendAsync(
+                        cont => client.GetChanges(token, cont)
+                    ).ConfigureAwait(false);
+
+                    var response = (ChangesResponse)changesResponse;
+                    foreach (var change in response.Changes)
+                    {
+                        if (change is UpsertionChange upsert)
+                        {
+                            var result = ConvertRecord(upsert.Record, dataType);
+                            if (result != null)
+                                channel.Writer.TryWrite(result);
+                        }
+                    }
+                    token = response.NextChangesToken;
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                channel.Writer.TryComplete(ex);
+                return;
+            }
+            channel.Writer.TryComplete();
+        }, cancelToken);
+
+        await foreach (var item in channel.Reader.ReadAllAsync(cancelToken).ConfigureAwait(false))
+            yield return item;
+    }
+
+
+    static Java.Lang.Class GetRecordKClass(DataType dataType) => dataType switch
+    {
+        DataType.StepCount => Java.Lang.Class.FromType(typeof(StepsRecord)),
+        DataType.HeartRate => Java.Lang.Class.FromType(typeof(HeartRateRecord)),
+        DataType.Calories => Java.Lang.Class.FromType(typeof(TotalCaloriesBurnedRecord)),
+        DataType.Distance => Java.Lang.Class.FromType(typeof(DistanceRecord)),
+        DataType.Weight => Java.Lang.Class.FromType(typeof(WeightRecord)),
+        DataType.Height => Java.Lang.Class.FromType(typeof(HeightRecord)),
+        DataType.BodyFatPercentage => Java.Lang.Class.FromType(typeof(BodyFatRecord)),
+        DataType.RestingHeartRate => Java.Lang.Class.FromType(typeof(RestingHeartRateRecord)),
+        DataType.BloodPressure => Java.Lang.Class.FromType(typeof(BloodPressureRecord)),
+        DataType.OxygenSaturation => Java.Lang.Class.FromType(typeof(OxygenSaturationRecord)),
+        DataType.SleepDuration => Java.Lang.Class.FromType(typeof(SleepSessionRecord)),
+        DataType.Hydration => Java.Lang.Class.FromType(typeof(HydrationRecord)),
+        _ => throw new InvalidOperationException($"Unsupported data type: {dataType}")
+    };
+
+
+    static HealthResult? ConvertRecord(IRecord record, DataType dataType)
+    {
+        var obj = (Java.Lang.Object)record;
+        switch (dataType)
+        {
+            case DataType.StepCount when obj is StepsRecord steps:
+                return new NumericHealthResult(
+                    dataType,
+                    DateTimeOffset.FromUnixTimeMilliseconds(steps.StartTime.ToEpochMilli()),
+                    DateTimeOffset.FromUnixTimeMilliseconds(steps.EndTime.ToEpochMilli()),
+                    steps.Count
+                );
+
+            case DataType.HeartRate when obj is HeartRateRecord hr:
+                var avgBpm = hr.Samples.Count > 0
+                    ? hr.Samples.Average(s => s.BeatsPerMinute)
+                    : 0;
+                return new NumericHealthResult(
+                    dataType,
+                    DateTimeOffset.FromUnixTimeMilliseconds(hr.StartTime.ToEpochMilli()),
+                    DateTimeOffset.FromUnixTimeMilliseconds(hr.EndTime.ToEpochMilli()),
+                    avgBpm
+                );
+
+            case DataType.Calories when obj is TotalCaloriesBurnedRecord cal:
+                return new NumericHealthResult(
+                    dataType,
+                    DateTimeOffset.FromUnixTimeMilliseconds(cal.StartTime.ToEpochMilli()),
+                    DateTimeOffset.FromUnixTimeMilliseconds(cal.EndTime.ToEpochMilli()),
+                    cal.Energy.Kilocalories
+                );
+
+            case DataType.Distance when obj is DistanceRecord dist:
+                return new NumericHealthResult(
+                    dataType,
+                    DateTimeOffset.FromUnixTimeMilliseconds(dist.StartTime.ToEpochMilli()),
+                    DateTimeOffset.FromUnixTimeMilliseconds(dist.EndTime.ToEpochMilli()),
+                    dist.Distance.Meters
+                );
+
+            case DataType.Weight when obj is WeightRecord weight:
+                var wTime = DateTimeOffset.FromUnixTimeMilliseconds(weight.Time.ToEpochMilli());
+                return new NumericHealthResult(dataType, wTime, wTime, weight.Weight.Kilograms);
+
+            case DataType.Height when obj is HeightRecord height:
+                var hTime = DateTimeOffset.FromUnixTimeMilliseconds(height.Time.ToEpochMilli());
+                return new NumericHealthResult(dataType, hTime, hTime, height.Height.Meters);
+
+            case DataType.BodyFatPercentage when obj is BodyFatRecord bf:
+                var bfTime = DateTimeOffset.FromUnixTimeMilliseconds(bf.Time.ToEpochMilli());
+                return new NumericHealthResult(dataType, bfTime, bfTime, bf.Percentage.Value);
+
+            case DataType.RestingHeartRate when obj is RestingHeartRateRecord rhr:
+                var rhrTime = DateTimeOffset.FromUnixTimeMilliseconds(rhr.Time.ToEpochMilli());
+                return new NumericHealthResult(dataType, rhrTime, rhrTime, rhr.BeatsPerMinute);
+
+            case DataType.BloodPressure when obj is BloodPressureRecord bp:
+                var bpTime = DateTimeOffset.FromUnixTimeMilliseconds(bp.Time.ToEpochMilli());
+                return new BloodPressureResult(
+                    bpTime, bpTime,
+                    bp.Systolic.MillimetersOfMercury,
+                    bp.Diastolic.MillimetersOfMercury
+                );
+
+            case DataType.OxygenSaturation when obj is OxygenSaturationRecord o2:
+                var o2Time = DateTimeOffset.FromUnixTimeMilliseconds(o2.Time.ToEpochMilli());
+                return new NumericHealthResult(dataType, o2Time, o2Time, o2.Percentage.Value);
+
+            case DataType.SleepDuration when obj is SleepSessionRecord sleep:
+                var sleepStart = DateTimeOffset.FromUnixTimeMilliseconds(sleep.StartTime.ToEpochMilli());
+                var sleepEnd = DateTimeOffset.FromUnixTimeMilliseconds(sleep.EndTime.ToEpochMilli());
+                var hours = (sleepEnd - sleepStart).TotalHours;
+                return new NumericHealthResult(dataType, sleepStart, sleepEnd, hours);
+
+            case DataType.Hydration when obj is HydrationRecord hydration:
+                return new NumericHealthResult(
+                    dataType,
+                    DateTimeOffset.FromUnixTimeMilliseconds(hydration.StartTime.ToEpochMilli()),
+                    DateTimeOffset.FromUnixTimeMilliseconds(hydration.EndTime.ToEpochMilli()),
+                    hydration.Volume.Liters
+                );
+
+            default:
+                return null;
+        }
     }
 
 

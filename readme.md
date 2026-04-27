@@ -5,6 +5,7 @@ Apple HealthKit and Android Health Connect for your .NET MAUI apps.
 ## Features
 * Read summary values between timestamps at specified intervals
 * Write health data to Apple HealthKit and Android Health Connect
+* Real-time observation of health data changes via `IAsyncEnumerable<HealthResult>`
 * Query distance, step count, calories, and heart rate
 * Query weight, height, body fat percentage, and resting heart rate
 * Query blood pressure (systolic/diastolic), oxygen saturation, sleep duration, and hydration
@@ -76,6 +77,24 @@ await health.Write(new NumericHealthResult(DataType.Hydration, start, end, 0.5))
 
 // write blood pressure
 await health.Write(new BloodPressureResult(DateTimeOffset.Now, DateTimeOffset.Now, 120.0, 80.0)); // mmHg
+
+// --- Observing Real-Time Changes ---
+
+// observe heart rate changes as they arrive
+using var cts = new CancellationTokenSource();
+
+await foreach (var result in health.Observe(DataType.HeartRate, cancelToken: cts.Token))
+{
+    if (result is NumericHealthResult numeric)
+        Console.WriteLine($"Heart rate: {numeric.Value} bpm at {numeric.Start:T}");
+}
+
+// observe with custom polling interval (Android only, iOS ignores this - it's push-based)
+await foreach (var result in health.Observe(DataType.StepCount, pollingInterval: TimeSpan.FromSeconds(10), cancelToken: cts.Token))
+{
+    if (result is NumericHealthResult numeric)
+        Console.WriteLine($"Steps: {numeric.Value}");
+}
 ```
 
 ## Supported Metrics

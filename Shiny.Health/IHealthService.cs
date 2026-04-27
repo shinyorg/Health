@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,6 +9,12 @@ namespace Shiny.Health;
 
 public interface IHealthService
 {
+    IAsyncEnumerable<HealthResult> Observe(
+        DataType dataType,
+        TimeSpan? pollingInterval = null,
+        [EnumeratorCancellation] CancellationToken cancelToken = default
+    );
+
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes);
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(PermissionType permissionType, params DataType[] dataTypes);
     Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params (PermissionType Permission, DataType Type)[] permissions);

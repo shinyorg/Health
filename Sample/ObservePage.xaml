@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sample="clr-namespace:Sample"
+             x:DataType="sample:ObserveViewModel"
+             x:Class="Sample.ObservePage"
+             Title="Observe"
+             BackgroundColor="{StaticResource Background}">
+
+    <ScrollView Padding="16">
+        <VerticalStackLayout Spacing="16">
+
+            <!-- Controls Card -->
+            <Border StrokeShape="RoundRectangle 12"
+                    StrokeThickness="0"
+                    BackgroundColor="{StaticResource Surface}"
+                    Padding="16">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource Gray300Brush}" Offset="0,2" Radius="8" Opacity="0.3" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Real-Time Observation"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}" />
+
+                    <Label Text="Select a data type and tap Start to observe changes in real time."
+                           FontSize="13"
+                           TextColor="{StaticResource TextSecondary}" />
+
+                    <Picker Title="Data Type"
+                            ItemsSource="{Binding DataTypes}"
+                            SelectedItem="{Binding SelectedDataType}"
+                            TextColor="{StaticResource TextPrimary}" />
+
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                        <Button Text="Start"
+                                Command="{Binding StartCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="8"
+                                HeightRequest="44" />
+                        <Button Text="Stop"
+                                Command="{Binding StopCommand}"
+                                BackgroundColor="{StaticResource Accent}"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                Grid.Column="1" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Status Banner -->
+            <Border StrokeShape="RoundRectangle 8"
+                    StrokeThickness="0"
+                    BackgroundColor="{StaticResource HeartRateBackground}"
+                    Padding="12"
+                    IsVisible="{Binding IsObserving}">
+                <HorizontalStackLayout Spacing="8">
+                    <ActivityIndicator IsRunning="True"
+                                       Color="{StaticResource HeartRateColor}"
+                                       HeightRequest="16"
+                                       WidthRequest="16" />
+                    <Label Text="{Binding StatusText}"
+                           TextColor="{StaticResource HeartRateColor}"
+                           FontSize="14"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Error Banner -->
+            <Border StrokeShape="RoundRectangle 8"
+                    StrokeThickness="0"
+                    BackgroundColor="#FEF2F2"
+                    Padding="12"
+                    IsVisible="{Binding HasError}">
+                <Label Text="{Binding ErrorText}"
+                       TextColor="{StaticResource Accent}"
+                       FontSize="14" />
+            </Border>
+
+            <!-- Results Section -->
+            <Label Text="{Binding ResultsHeader}"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextPrimary}" />
+
+            <CollectionView ItemsSource="{Binding Results}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="sample:ObserveEntry">
+                        <Border StrokeShape="RoundRectangle 8"
+                                StrokeThickness="0"
+                                BackgroundColor="{StaticResource Surface}"
+                                Padding="12"
+                                Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto" ColumnSpacing="8" RowSpacing="4">
+                                <Label Text="{Binding Timestamp, StringFormat='{0:HH:mm:ss.fff}'}"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimary}" />
+                                <Label Text="{Binding Value}"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}"
+                                       Grid.Column="1" />
+                                <Label Text="{Binding TimeRange}"
+                                       FontSize="12"
+                                       TextColor="{StaticResource TextMuted}"
+                                       Grid.Row="1"
+                                       Grid.ColumnSpan="2" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+                <CollectionView.EmptyView>
+                    <Label Text="No data received yet. Start observing and add health data from another app to see changes."
+                           TextColor="{StaticResource TextMuted}"
+                           FontSize="13"
+                           HorizontalOptions="Center"
+                           Margin="0,20" />
+                </CollectionView.EmptyView>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

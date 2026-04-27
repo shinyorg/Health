@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Foundation;
 using HealthKit;
@@ -11,6 +13,126 @@ namespace Shiny.Health;
 
 public class HealthService : IHealthService
 {
+    public async IAsyncEnumerable<HealthResult> Observe(
+        DataType dataType,
+        TimeSpan? pollingInterval = null,
+        [EnumeratorCancellation] CancellationToken cancelToken = default)
+    {
+        var channel = Channel.CreateUnbounded<HealthResult>(new UnboundedChannelOptions { SingleWriter = false });
+        var store = new HKHealthStore();
+
+        var sampleType = ToNativeSampleType(dataType);
+        var predicate = HKQuery.GetPredicateForSamples(
+            (NSDate)DateTime.UtcNow,
+            null,
+            HKQueryOptions.StrictStartDate
+        );
+
+        HKAnchoredObjectUpdateHandler handler = (q, addedObjects, deletedObjects, newAnchor, error) =>
+        {
+            if (error != null)
+            {
+                channel.Writer.TryComplete(new InvalidOperationException(error.Description));
+                return;
+            }
+
+            if (addedObjects != null)
+            {
+                foreach (var sample in addedObjects)
+                {
+                    var result = ConvertSample(sample, dataType);
+                    if (result != null)
+                        channel.Writer.TryWrite(result);
+                }
+            }
+        };
+
+        var query = new HKAnchoredObjectQuery(
+            sampleType,
+            predicate,
+            HKQueryAnchor.Create(0),
+            0,
+            handler
+        );
+        query.UpdateHandler = handler;
+
+        var registration = cancelToken.Register(() =>
+        {
+            store.StopQuery(query);
+            channel.Writer.TryComplete();
+            store.Dispose();
+        });
+
+        store.ExecuteQuery(query);
+
+        try
+        {
+            await foreach (var item in channel.Reader.ReadAllAsync(cancelToken).ConfigureAwait(false))
+                yield return item;
+        }
+        finally
+        {
+            store.StopQuery(query);
+            channel.Writer.TryComplete();
+            store.Dispose();
+            registration.Dispose();
+        }
+    }
+
+
+    static HKSampleType ToNativeSampleType(DataType dataType) => dataType switch
+    {
+        DataType.SleepDuration => HKCategoryType.Create(HKCategoryTypeIdentifier.SleepAnalysis)!,
+        DataType.BloodPressure => HKCorrelationType.Create(HKCorrelationTypeIdentifier.BloodPressure)!,
+        _ => HKQuantityType.Create(ToNativeType(dataType))!
+    };
+
+
+    static HealthResult? ConvertSample(HKSample sample, DataType dataType)
+    {
+        var start = (DateTimeOffset)sample.StartDate.ToDateTime();
+        var end = (DateTimeOffset)sample.EndDate.ToDateTime();
+
+        if (dataType == DataType.BloodPressure && sample is HKCorrelation correlation)
+        {
+            var sysType = HKQuantityType.Create(HKQuantityTypeIdentifier.BloodPressureSystolic)!;
+            var diaType = HKQuantityType.Create(HKQuantityTypeIdentifier.BloodPressureDiastolic)!;
+            var sysSample = correlation.GetObjects(sysType).OfType<HKQuantitySample>().FirstOrDefault();
+            var diaSample = correlation.GetObjects(diaType).OfType<HKQuantitySample>().FirstOrDefault();
+
+            if (sysSample == null || diaSample == null)
+                return null;
+
+            var systolic = sysSample.Quantity.GetDoubleValue(HKUnit.MillimeterOfMercury);
+            var diastolic = diaSample.Quantity.GetDoubleValue(HKUnit.MillimeterOfMercury);
+            return new BloodPressureResult(start, end, systolic, diastolic);
+        }
+
+        if (dataType == DataType.SleepDuration && sample is HKCategorySample catSample)
+        {
+            // Filter for asleep states (exclude InBed=0 and Awake=2)
+            if (catSample.Value == 0 || catSample.Value == 2)
+                return null;
+
+            var hours = (end - start).TotalHours;
+            return new NumericHealthResult(DataType.SleepDuration, start, end, hours);
+        }
+
+        if (sample is HKQuantitySample qtySample)
+        {
+            var unit = GetUnit(dataType);
+            var value = qtySample.Quantity.GetDoubleValue(unit);
+
+            if (dataType is DataType.BodyFatPercentage or DataType.OxygenSaturation)
+                value *= 100;
+
+            return new NumericHealthResult(dataType, start, end, value);
+        }
+
+        return null;
+    }
+
+
     public Task<IList<NumericHealthResult>> GetAverageHeartRate(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default)
         => this.Query(
             HKQuantityTypeIdentifier.HeartRate,
