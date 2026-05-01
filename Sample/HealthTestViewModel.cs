@@ -76,6 +76,13 @@ public partial class HealthTestViewModel(
             ErrorText = null;
             OnPropertyChanged(nameof(HasError));
 
+            if (!health.IsAvailable)
+            {
+                ErrorText = "Health services are not available on this device";
+                OnPropertyChanged(nameof(HasError));
+                return;
+            }
+
             await health.RequestPermissions(
                 DataType.Calories,
                 DataType.Distance,

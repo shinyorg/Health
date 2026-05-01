@@ -31,8 +31,23 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
     TaskCompletionSource<bool>? permissionTcs;
 
 
+    public bool IsAvailable
+    {
+        get
+        {
+            var status = HealthConnectClient.GetSdkStatus(platform.AppContext);
+            return status == HealthConnectClient.SdkAvailable;
+        }
+    }
+
+
     IHealthConnectClient GetClient()
-        => IHealthConnectClient.GetOrCreate(platform.AppContext);
+    {
+        if (!IsAvailable)
+            throw new InvalidOperationException("Health Connect is not available on this device. Ensure the Health Connect app is installed.");
+
+        return IHealthConnectClient.GetOrCreate(platform.AppContext);
+    }
 
 
     public Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
@@ -58,10 +73,13 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         if (neededPermissions.All(granted.Contains))
             return permissions.Select(x => (x.Type, true));
 
+        var activity = platform.CurrentActivity
+            ?? throw new InvalidOperationException("No current activity available. Ensure permissions are requested after the activity has been created.");
+
         permissionTcs = new TaskCompletionSource<bool>();
         var contract = new HealthPermissionsRequestContract();
         var intent = contract.CreateIntentImpl(platform.AppContext, neededPermissions);
-        platform.CurrentActivity.StartActivityForResult(intent, REQUEST_CODE);
+        activity.StartActivityForResult(intent, REQUEST_CODE);
         await permissionTcs.Task.ConfigureAwait(false);
 
         granted = await GetGrantedPermissionsAsync(client).ConfigureAwait(false);

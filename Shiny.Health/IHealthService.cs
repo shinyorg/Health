@@ -14,6 +14,12 @@ namespace Shiny.Health;
 public interface IHealthService
 {
     /// <summary>
+    /// Checks whether the platform health store is available on this device.
+    /// On Android, returns true only if Health Connect is installed and the SDK status is OK.
+    /// On iOS, always returns true (HealthKit is available on all supported devices).
+    /// </summary>
+    bool IsAvailable { get; }
+    /// <summary>
     /// Observes health data changes in real time, yielding new samples as they are recorded.
     /// iOS uses push-based HKAnchoredObjectQuery; Android polls Health Connect change tokens.
     /// Only yields samples added after observation starts (forward-only).
