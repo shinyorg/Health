@@ -32,7 +32,6 @@
 
     <ItemGroup>
         <None Include="..\nuget.png" Pack="true" PackagePath="icon.png" />
-        <None Include="..\nuget.txt" Pack="true" PackagePath="readme.txt" />
         <None Include="..\readme.md" Pack="true" PackagePath="\" />
         <PackageReference Include="NerdBank.GitVersioning" Version="3.9.50" PrivateAssets="All" />
     </ItemGroup>

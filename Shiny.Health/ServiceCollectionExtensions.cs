@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Shiny.Health;
 
 namespace Shiny;
 
@@ -8,7 +7,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddHealthIntegration(this IServiceCollection services)
     {
-        services.AddShinyService<HealthService>();
+#if IOS || ANDROID
+        services.AddShinyService<Shiny.Health.HealthService>();
+#endif
         return services;
     }
 }
