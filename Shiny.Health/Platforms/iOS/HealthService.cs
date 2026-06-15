@@ -84,6 +84,7 @@ public class HealthService : IHealthService
     static HKSampleType ToNativeSampleType(DataType dataType) => dataType switch
     {
         DataType.SleepDuration => HKCategoryType.Create(HKCategoryTypeIdentifier.SleepAnalysis)!,
+        DataType.MenstruationFlow => HKCategoryType.Create(HKCategoryTypeIdentifier.MenstrualFlow)!,
         DataType.BloodPressure => HKCorrelationType.Create(HKCorrelationTypeIdentifier.BloodPressure)!,
         _ => HKQuantityType.Create(ToNativeType(dataType))!
     };
@@ -117,6 +118,12 @@ public class HealthService : IHealthService
 
             var hours = (end - start).TotalHours;
             return new NumericHealthResult(DataType.SleepDuration, start, end, hours);
+        }
+
+        if (dataType == DataType.MenstruationFlow && sample is HKCategorySample menstrualSample)
+        {
+            var flow = FromNativeFlow((HKCategoryValueMenstrualFlow)(long)menstrualSample.Value);
+            return new MenstruationFlowResult(start, end, flow, ReadCycleStart(menstrualSample));
         }
 
         if (sample is HKQuantitySample qtySample)
@@ -448,6 +455,49 @@ public class HealthService : IHealthService
         );
 
 
+    public async Task<IList<MenstruationFlowResult>> GetMenstruationFlow(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default)
+    {
+        var tcs = new TaskCompletionSource<HKSample[]>();
+        var catType = HKCategoryType.Create(HKCategoryTypeIdentifier.MenstrualFlow)!;
+        var predicate = HKQuery.GetPredicateForSamples(
+            (NSDate)start.LocalDateTime,
+            (NSDate)end.LocalDateTime,
+            HKQueryOptions.None
+        );
+
+        var query = new HKSampleQuery(catType, predicate, 0, null, (q, results, error) =>
+        {
+            if (error != null)
+                tcs.TrySetException(new InvalidOperationException(error.Description));
+            else
+                tcs.TrySetResult(results ?? Array.Empty<HKSample>());
+        });
+
+        using var store = new HKHealthStore();
+        using var ct = cancelToken.Register(() =>
+        {
+            tcs.TrySetCanceled();
+            store.StopQuery(query);
+        });
+
+        store.ExecuteQuery(query);
+        var samples = await tcs.Task.ConfigureAwait(false);
+
+        var list = new List<MenstruationFlowResult>();
+        foreach (var sample in samples.OfType<HKCategorySample>())
+        {
+            var flow = FromNativeFlow((HKCategoryValueMenstrualFlow)(long)sample.Value);
+            list.Add(new MenstruationFlowResult(
+                (DateTimeOffset)sample.StartDate.ToDateTime(),
+                (DateTimeOffset)sample.EndDate.ToDateTime(),
+                flow,
+                ReadCycleStart(sample)
+            ));
+        }
+        return list;
+    }
+
+
     public Task<IEnumerable<(DataType Type, bool Success)>> RequestPermissions(params DataType[] dataTypes)
         => RequestPermissions(PermissionType.Read, dataTypes);
 
@@ -464,6 +514,14 @@ public class HealthService : IHealthService
             if (dataType == DataType.SleepDuration)
             {
                 var catType = HKCategoryType.Create(HKCategoryTypeIdentifier.SleepAnalysis)!;
+                if (permissionType.HasFlag(PermissionType.Read))
+                    read.Add(catType);
+                if (permissionType.HasFlag(PermissionType.Write))
+                    share.Add(catType);
+            }
+            else if (dataType == DataType.MenstruationFlow)
+            {
+                var catType = HKCategoryType.Create(HKCategoryTypeIdentifier.MenstrualFlow)!;
                 if (permissionType.HasFlag(PermissionType.Read))
                     read.Add(catType);
                 if (permissionType.HasFlag(PermissionType.Write))
@@ -587,6 +645,31 @@ public class HealthService : IHealthService
     }
 
 
+    public async Task Write(MenstruationFlowResult result, CancellationToken cancelToken = default)
+    {
+        using var store = new HKHealthStore();
+        var catType = HKCategoryType.Create(HKCategoryTypeIdentifier.MenstrualFlow)!;
+
+        // HealthKit requires the cycle-start metadata key on menstrual flow samples
+        var metadata = new NSMutableDictionary
+        {
+            [HKMetadataKey.MenstrualCycleStart] = NSNumber.FromBoolean(result.IsCycleStart)
+        };
+
+        var sample = HKCategorySample.FromType(
+            catType,
+            (nint)(long)ToNativeFlow(result.Flow),
+            (NSDate)result.Start.LocalDateTime,
+            (NSDate)result.End.LocalDateTime,
+            metadata
+        );
+
+        var saveResult = await store.SaveObjectAsync(sample).ConfigureAwait(false);
+        if (!saveResult.Item1)
+            throw new InvalidOperationException(saveResult.Item2?.LocalizedDescription ?? "Failed to save menstruation data");
+    }
+
+
     public AccessState GetCurrentStatus(DataType dataType)
     {
         if (!OperatingSystemShim.IsIOSVersionAtLeast(12))
@@ -600,6 +683,13 @@ public class HealthService : IHealthService
         if (dataType == DataType.SleepDuration)
         {
             var catType = HKCategoryType.Create(HKCategoryTypeIdentifier.SleepAnalysis)!;
+            var status = store.GetAuthorizationStatus(catType);
+            return ToAccessState(status);
+        }
+
+        if (dataType == DataType.MenstruationFlow)
+        {
+            var catType = HKCategoryType.Create(HKCategoryTypeIdentifier.MenstrualFlow)!;
             var status = store.GetAuthorizationStatus(catType);
             return ToAccessState(status);
         }
@@ -621,6 +711,33 @@ public class HealthService : IHealthService
         var type = HKQuantityType.Create(native)!;
         return ToAccessState(store.GetAuthorizationStatus(type));
     }
+
+
+    static bool ReadCycleStart(HKCategorySample sample)
+    {
+        var value = sample.WeakMetadata?[HKMetadataKey.MenstrualCycleStart];
+        return value is NSNumber num && num.BoolValue;
+    }
+
+
+    static MenstrualFlow FromNativeFlow(HKCategoryValueMenstrualFlow value) => value switch
+    {
+        HKCategoryValueMenstrualFlow.None => MenstrualFlow.None,
+        HKCategoryValueMenstrualFlow.Light => MenstrualFlow.Light,
+        HKCategoryValueMenstrualFlow.Medium => MenstrualFlow.Medium,
+        HKCategoryValueMenstrualFlow.Heavy => MenstrualFlow.Heavy,
+        _ => MenstrualFlow.Unspecified
+    };
+
+
+    static HKCategoryValueMenstrualFlow ToNativeFlow(MenstrualFlow flow) => flow switch
+    {
+        MenstrualFlow.None => HKCategoryValueMenstrualFlow.None,
+        MenstrualFlow.Light => HKCategoryValueMenstrualFlow.Light,
+        MenstrualFlow.Medium => HKCategoryValueMenstrualFlow.Medium,
+        MenstrualFlow.Heavy => HKCategoryValueMenstrualFlow.Heavy,
+        _ => HKCategoryValueMenstrualFlow.Unspecified
+    };
 
 
     static AccessState ToAccessState(HKAuthorizationStatus status) => status switch

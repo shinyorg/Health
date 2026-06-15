@@ -71,6 +71,13 @@ public interface IHealthService
     Task Write(BloodPressureResult result, CancellationToken cancelToken = default);
 
     /// <summary>
+    /// Writes a menstruation flow record to the platform health store.
+    /// </summary>
+    /// <param name="result">The menstruation flow record (flow level and optional cycle-start flag).</param>
+    /// <param name="cancelToken">Optional cancellation token.</param>
+    Task Write(MenstruationFlowResult result, CancellationToken cancelToken = default);
+
+    /// <summary>
     /// Gets calorie burn data (kcal) aggregated over the specified time range and interval.
     /// </summary>
     /// <param name="start">The start of the query time range.</param>
@@ -249,6 +256,21 @@ public interface IHealthService
         DateTimeOffset start,
         DateTimeOffset end,
         Interval interval,
+        CancellationToken cancelToken = default
+    );
+
+    /// <summary>
+    /// Gets menstruation flow records over the specified time range.
+    /// Unlike the other metrics, menstruation flow is categorical (not numeric) and event-based,
+    /// so results are returned as individual records rather than aggregated into interval buckets.
+    /// </summary>
+    /// <param name="start">The start of the query time range.</param>
+    /// <param name="end">The end of the query time range.</param>
+    /// <param name="cancelToken">Optional cancellation token.</param>
+    /// <returns>A list of menstruation flow records, each with a flow level and time range.</returns>
+    Task<IList<MenstruationFlowResult>> GetMenstruationFlow(
+        DateTimeOffset start,
+        DateTimeOffset end,
         CancellationToken cancelToken = default
     );
 }

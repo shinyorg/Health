@@ -175,6 +175,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         DataType.OxygenSaturation => Java.Lang.Class.FromType(typeof(OxygenSaturationRecord)),
         DataType.SleepDuration => Java.Lang.Class.FromType(typeof(SleepSessionRecord)),
         DataType.Hydration => Java.Lang.Class.FromType(typeof(HydrationRecord)),
+        DataType.MenstruationFlow => Java.Lang.Class.FromType(typeof(MenstruationFlowRecord)),
         _ => throw new InvalidOperationException($"Unsupported data type: {dataType}")
     };
 
@@ -260,6 +261,10 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
                     DateTimeOffset.FromUnixTimeMilliseconds(hydration.EndTime.ToEpochMilli()),
                     hydration.Volume.Liters
                 );
+
+            case DataType.MenstruationFlow when obj is MenstruationFlowRecord menstruation:
+                var mTime = DateTimeOffset.FromUnixTimeMilliseconds(menstruation.Time.ToEpochMilli());
+                return new MenstruationFlowResult(mTime, mTime, FromNativeFlow(menstruation.Flow));
 
             default:
                 return null;
@@ -470,6 +475,39 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         );
 
 
+    public async Task<IList<MenstruationFlowResult>> GetMenstruationFlow(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default)
+    {
+        var client = GetClient();
+        var startInstant = Instant.OfEpochMilli(start.ToUnixTimeMilliseconds())!;
+        var endInstant = Instant.OfEpochMilli(end.ToUnixTimeMilliseconds())!;
+
+        var javaClass = Java.Lang.Class.FromType(typeof(MenstruationFlowRecord));
+        var kClass = JvmClassMappingKt.GetKotlinClass(javaClass);
+        var request = new ReadRecordsRequest(
+            kClass,
+            TimeRangeFilter.Between(startInstant, endInstant),
+            new List<DataOrigin>(),
+            true,
+            10000,
+            null!
+        );
+
+        var response = await CallSuspendAsync(
+            cont => client.ReadRecords(request, cont)
+        ).ConfigureAwait(false);
+
+        var readResponse = (ReadRecordsResponse)response;
+        var list = new List<MenstruationFlowResult>();
+        foreach (var item in readResponse.Records)
+        {
+            var record = (MenstruationFlowRecord)item!;
+            var time = DateTimeOffset.FromUnixTimeMilliseconds(record.Time.ToEpochMilli());
+            list.Add(new MenstruationFlowResult(time, time, FromNativeFlow(record.Flow)));
+        }
+        return list;
+    }
+
+
     public async Task Write(NumericHealthResult result, CancellationToken cancelToken = default)
     {
         var client = GetClient();
@@ -516,6 +554,42 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
 
         await InsertRecord(client, (Java.Lang.Object)record).ConfigureAwait(false);
     }
+
+
+    public async Task Write(MenstruationFlowResult result, CancellationToken cancelToken = default)
+    {
+        var client = GetClient();
+        var instant = Instant.OfEpochMilli(result.Start.ToUnixTimeMilliseconds())!;
+        var zoneOffset = ZoneOffset.OfTotalSeconds((int)result.Start.Offset.TotalSeconds)!;
+
+        var record = new MenstruationFlowRecord(
+            instant,
+            zoneOffset,
+            Metadata.UnknownRecordingMethod(),
+            ToNativeFlow(result.Flow)
+        );
+
+        await InsertRecord(client, (Java.Lang.Object)record).ConfigureAwait(false);
+    }
+
+
+    static MenstrualFlow FromNativeFlow(int flow)
+    {
+        if (flow == (int)MenstruationFlowRecord.FlowLight) return MenstrualFlow.Light;
+        if (flow == (int)MenstruationFlowRecord.FlowMedium) return MenstrualFlow.Medium;
+        if (flow == (int)MenstruationFlowRecord.FlowHeavy) return MenstrualFlow.Heavy;
+        return MenstrualFlow.Unspecified;
+    }
+
+
+    // Health Connect has no "none" flow value; None and Unspecified both map to FLOW_UNKNOWN
+    static int ToNativeFlow(MenstrualFlow flow) => flow switch
+    {
+        MenstrualFlow.Light => (int)MenstruationFlowRecord.FlowLight,
+        MenstrualFlow.Medium => (int)MenstruationFlowRecord.FlowMedium,
+        MenstrualFlow.Heavy => (int)MenstruationFlowRecord.FlowHeavy,
+        _ => (int)MenstruationFlowRecord.FlowUnknown
+    };
 
 
     static HeartRateRecord CreateHeartRateRecord(Instant start, ZoneOffset offset, Instant end, long bpm, Metadata metadata)
@@ -679,6 +753,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         DataType.OxygenSaturation => ["android.permission.health.READ_OXYGEN_SATURATION"],
         DataType.SleepDuration => ["android.permission.health.READ_SLEEP"],
         DataType.Hydration => ["android.permission.health.READ_HYDRATION"],
+        DataType.MenstruationFlow => ["android.permission.health.READ_MENSTRUATION"],
         _ => throw new InvalidOperationException("Invalid DataType")
     };
 
@@ -697,6 +772,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         DataType.OxygenSaturation => ["android.permission.health.WRITE_OXYGEN_SATURATION"],
         DataType.SleepDuration => ["android.permission.health.WRITE_SLEEP"],
         DataType.Hydration => ["android.permission.health.WRITE_HYDRATION"],
+        DataType.MenstruationFlow => ["android.permission.health.WRITE_MENSTRUATION"],
         _ => throw new InvalidOperationException("Invalid DataType")
     };
 
