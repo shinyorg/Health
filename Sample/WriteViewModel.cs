@@ -47,7 +47,20 @@ public partial class WriteViewModel(
         DataType.OxygenSaturation,
         DataType.SleepDuration,
         DataType.Hydration,
-        DataType.MenstruationFlow
+        DataType.MenstruationFlow,
+        DataType.BloodGlucose,
+        DataType.BodyTemperature,
+        DataType.BasalBodyTemperature,
+        DataType.RespiratoryRate,
+        DataType.Vo2Max,
+        DataType.HeartRateVariability,
+        DataType.LeanBodyMass,
+        DataType.BasalEnergyBurned,
+        DataType.ActiveEnergyBurned,
+        DataType.FloorsClimbed,
+        DataType.WheelchairPushes,
+        DataType.Speed,
+        DataType.Power
     ];
 
     public List<MenstrualFlow> MenstrualFlows { get; } = Enum.GetValues<MenstrualFlow>().ToList();
@@ -84,6 +97,19 @@ public partial class WriteViewModel(
         DataType.OxygenSaturation => "%",
         DataType.SleepDuration => "hours",
         DataType.Hydration => "liters",
+        DataType.BloodGlucose => "mg/dL",
+        DataType.BodyTemperature => "°C",
+        DataType.BasalBodyTemperature => "°C",
+        DataType.RespiratoryRate => "breaths/min",
+        DataType.Vo2Max => "mL/kg/min",
+        DataType.HeartRateVariability => "ms",
+        DataType.LeanBodyMass => "kg",
+        DataType.BasalEnergyBurned => "kcal",
+        DataType.ActiveEnergyBurned => "kcal",
+        DataType.FloorsClimbed => "floors",
+        DataType.WheelchairPushes => "pushes",
+        DataType.Speed => "m/s",
+        DataType.Power => "W",
         _ => ""
     };
 

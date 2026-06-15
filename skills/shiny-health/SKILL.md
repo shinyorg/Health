@@ -62,6 +62,58 @@ triggers:
   - health changes
   - AddHealthIntegration
   - Shiny.Health
+  - blood glucose
+  - body temperature
+  - basal body temperature
+  - respiratory rate
+  - vo2 max
+  - heart rate variability
+  - HRV
+  - lean body mass
+  - basal energy
+  - active energy
+  - floors climbed
+  - wheelchair pushes
+  - speed
+  - power
+  - sexual activity
+  - ovulation test
+  - cervical mucus
+  - intermenstrual bleeding
+  - workout
+  - exercise session
+  - nutrition
+  - macros
+  - GetBloodGlucose
+  - GetBodyTemperature
+  - GetBasalBodyTemperature
+  - GetRespiratoryRate
+  - GetVo2Max
+  - GetHeartRateVariability
+  - GetLeanBodyMass
+  - GetBasalEnergyBurned
+  - GetActiveEnergyBurned
+  - GetFloorsClimbed
+  - GetWheelchairPushes
+  - GetSpeed
+  - GetPower
+  - GetSexualActivity
+  - GetOvulationTests
+  - GetCervicalMucus
+  - GetIntermenstrualBleeding
+  - GetWorkouts
+  - GetNutrition
+  - SexualActivityResult
+  - OvulationTestResult
+  - CervicalMucusResult
+  - IntermenstrualBleedingResult
+  - WorkoutResult
+  - NutritionResult
+  - WorkoutType
+  - MealType
+  - SexualActivityProtection
+  - OvulationTestOutcome
+  - CervicalMucusAppearance
 ---
 
 # Shiny Health Skill
@@ -88,7 +140,8 @@ Invoke this skill when the user wants to:
 
 Shiny Health provides:
 - A single `IHealthService` interface that works on both iOS and Android
-- Read and write support for all 12 cross-platform health metrics
+- Read and write support for 30+ cross-platform health metrics spanning activity, body, vitals,
+  nutrition, reproductive/cycle tracking, and workouts
 - Real-time observation of health data changes via `IAsyncEnumerable<HealthResult>`
 - Time-bucketed aggregate queries at minute, hour, or day intervals
 - Permission management with read/write granularity via `PermissionType`
@@ -206,14 +259,42 @@ public enum Interval { Minutes, Hours, Days }
 // Available health data types
 public enum DataType
 {
+    // numeric (NumericHealthResult)
     StepCount, HeartRate, Calories, Distance,
     Weight, Height, BodyFatPercentage, RestingHeartRate,
     BloodPressure, OxygenSaturation, SleepDuration, Hydration,
-    MenstruationFlow
+    BloodGlucose, BodyTemperature, BasalBodyTemperature, RespiratoryRate,
+    Vo2Max, HeartRateVariability, LeanBodyMass, BasalEnergyBurned,
+    ActiveEnergyBurned, FloorsClimbed, WheelchairPushes, Speed, Power,
+
+    // categorical / event-based
+    MenstruationFlow, SexualActivity, OvulationTest, CervicalMucus, IntermenstrualBleeding,
+
+    // structured records
+    Workout, Nutrition
 }
 
 // Menstrual flow level (categorical). None is iOS-only; Android maps it to Unspecified.
 public enum MenstrualFlow { Unspecified, None, Light, Medium, Heavy }
+
+// Reproductive / cycle-tracking enums
+public enum SexualActivityProtection { Unspecified, Protected, Unprotected }
+public enum OvulationTestOutcome { Inconclusive, Positive, High, Negative }
+public enum CervicalMucusAppearance { Unspecified, Dry, Sticky, Creamy, Watery, EggWhite }
+
+// Workout activity (subset mapped on both platforms; unmapped -> Other) and meal type
+public enum WorkoutType { Other, Running, Walking, Hiking, Cycling, Swimming, Rowing, Elliptical,
+    StairClimbing, StrengthTraining, HighIntensityIntervalTraining, Yoga, Pilates, Tennis,
+    Basketball, Soccer, Baseball, Golf, Boxing, MartialArts, Dancing }
+public enum MealType { Unknown, Breakfast, Lunch, Dinner, Snack }
+
+// Categorical / structured result records
+public record SexualActivityResult(DateTimeOffset Start, DateTimeOffset End, SexualActivityProtection Protection) : HealthResult(DataType.SexualActivity, Start, End);
+public record OvulationTestResult(DateTimeOffset Start, DateTimeOffset End, OvulationTestOutcome Outcome) : HealthResult(DataType.OvulationTest, Start, End);
+public record CervicalMucusResult(DateTimeOffset Start, DateTimeOffset End, CervicalMucusAppearance Appearance) : HealthResult(DataType.CervicalMucus, Start, End);
+public record IntermenstrualBleedingResult(DateTimeOffset Start, DateTimeOffset End) : HealthResult(DataType.IntermenstrualBleeding, Start, End);
+public record WorkoutResult(DateTimeOffset Start, DateTimeOffset End, WorkoutType Workout, double? TotalEnergyKilocalories = null, double? TotalDistanceMeters = null, string? Title = null) : HealthResult(DataType.Workout, Start, End);
+public record NutritionResult(DateTimeOffset Start, DateTimeOffset End, MealType Meal = MealType.Unknown, string? Name = null, double? EnergyKilocalories = null, double? ProteinGrams = null, double? CarbohydratesGrams = null, double? TotalFatGrams = null, double? FiberGrams = null, double? SugarGrams = null, double? SodiumGrams = null, double? CholesterolGrams = null) : HealthResult(DataType.Nutrition, Start, End);
 
 // Result for single-value metrics
 public record NumericHealthResult(
@@ -303,9 +384,38 @@ public interface IHealthService
 | Oxygen Saturation | % | OxygenSaturation | OxygenSaturationRecord |
 | Sleep Duration | hours | SleepAnalysis (category) | SleepSessionRecord |
 | Hydration | liters | DietaryWater | HydrationRecord |
+| Blood Glucose | mg/dL | BloodGlucose | BloodGlucoseRecord |
+| Body Temperature | °C | BodyTemperature | BodyTemperatureRecord |
+| Basal Body Temperature | °C | BasalBodyTemperature | BasalBodyTemperatureRecord |
+| Respiratory Rate | breaths/min | RespiratoryRate | RespiratoryRateRecord |
+| VO2 Max | mL/kg/min | VO2Max | Vo2MaxRecord |
+| Heart Rate Variability | ms | HeartRateVariabilitySDNN | HeartRateVariabilityRmssdRecord¹ |
+| Lean Body Mass | kg | LeanBodyMass | LeanBodyMassRecord |
+| Basal Energy Burned | kcal | BasalEnergyBurned | BasalMetabolicRateRecord |
+| Active Energy Burned | kcal | ActiveEnergyBurned | ActiveCaloriesBurnedRecord |
+| Floors Climbed | count | FlightsClimbed | FloorsClimbedRecord |
+| Wheelchair Pushes | count | PushCount | WheelchairPushesRecord |
+| Speed | m/s | WalkingSpeed² | SpeedRecord |
+| Power | watts | CyclingPower² | PowerRecord |
 | Menstruation Flow | flow level | MenstrualFlow (category) | MenstruationFlowRecord |
+| Sexual Activity | protection enum | SexualActivity (category) | SexualActivityRecord |
+| Ovulation Test | result enum | OvulationTestResult (category) | OvulationTestRecord |
+| Cervical Mucus | appearance enum | CervicalMucusQuality (category) | CervicalMucusRecord |
+| Intermenstrual Bleeding | event | IntermenstrualBleeding (category) | IntermenstrualBleedingRecord |
+| Workout | session | HKWorkout | ExerciseSessionRecord |
+| Nutrition | food/macros | Food correlation (dietary types) | NutritionRecord |
 
-> **Menstruation flow is different from the other metrics**: it is categorical (a `MenstrualFlow` level, not a `double`) and event-based, so it uses `MenstruationFlowResult`, has no `Interval` bucketing, and is read via `GetMenstruationFlow(start, end)`. iOS exposes a `None` level and an `IsCycleStart` flag (persisted via HealthKit cycle metadata); Health Connect has no `None` value (mapped to `Unspecified`) and ignores `IsCycleStart`.
+> ¹ **HRV caveat**: iOS reports SDNN, Health Connect reports RMSSD - both are HRV in milliseconds but computed differently, so the values are not directly comparable across platforms.
+> ² **Speed/Power caveat**: Health Connect's `SpeedRecord`/`PowerRecord` are generic; iOS has no generic equivalents, so Speed maps to walking speed and Power maps to cycling power.
+
+> **The categorical, event-based, and structured metrics differ from the numeric ones**: they use their own
+> result records (`SexualActivityResult`, `OvulationTestResult`, `CervicalMucusResult`, `IntermenstrualBleedingResult`,
+> `WorkoutResult`, `NutritionResult`, plus `MenstruationFlowResult`), have **no `Interval` bucketing**, and are
+> read via dedicated methods (`GetSexualActivity`, `GetOvulationTests`, `GetCervicalMucus`,
+> `GetIntermenstrualBleeding`, `GetWorkouts`, `GetNutrition`). On Android, a `WorkoutResult`'s energy/distance are
+> `null` on read (Health Connect stores those as separate records from the exercise session).
+
+> **Menstruation flow is different from the other numeric metrics**: it is categorical (a `MenstrualFlow` level, not a `double`) and event-based, so it uses `MenstruationFlowResult`, has no `Interval` bucketing, and is read via `GetMenstruationFlow(start, end)`. iOS exposes a `None` level and an `IsCycleStart` flag (persisted via HealthKit cycle metadata); Health Connect has no `None` value (mapped to `Unspecified`) and ignores `IsCycleStart`.
 
 ## Usage Examples
 

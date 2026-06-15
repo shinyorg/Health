@@ -77,6 +77,24 @@ public interface IHealthService
     /// <param name="cancelToken">Optional cancellation token.</param>
     Task Write(MenstruationFlowResult result, CancellationToken cancelToken = default);
 
+    /// <summary>Writes a sexual activity record to the platform health store.</summary>
+    Task Write(SexualActivityResult result, CancellationToken cancelToken = default);
+
+    /// <summary>Writes an ovulation test result record to the platform health store.</summary>
+    Task Write(OvulationTestResult result, CancellationToken cancelToken = default);
+
+    /// <summary>Writes a cervical mucus observation record to the platform health store.</summary>
+    Task Write(CervicalMucusResult result, CancellationToken cancelToken = default);
+
+    /// <summary>Writes an intermenstrual bleeding (spotting) event to the platform health store.</summary>
+    Task Write(IntermenstrualBleedingResult result, CancellationToken cancelToken = default);
+
+    /// <summary>Writes a workout / exercise session to the platform health store.</summary>
+    Task Write(WorkoutResult result, CancellationToken cancelToken = default);
+
+    /// <summary>Writes a nutrition / food intake record to the platform health store.</summary>
+    Task Write(NutritionResult result, CancellationToken cancelToken = default);
+
     /// <summary>
     /// Gets calorie burn data (kcal) aggregated over the specified time range and interval.
     /// </summary>
@@ -273,4 +291,78 @@ public interface IHealthService
         DateTimeOffset end,
         CancellationToken cancelToken = default
     );
+
+    // --- Tier 1 / fitness numeric metrics ---------------------------------------------------------
+
+    /// <summary>Gets blood glucose data (mg/dL), averaged per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetBloodGlucose(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>Gets body temperature data (°C), averaged per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetBodyTemperature(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>Gets basal body temperature data (°C), averaged per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetBasalBodyTemperature(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>Gets respiratory rate data (breaths/min), averaged per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetRespiratoryRate(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>Gets VO2 max data (mL/kg/min), averaged per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetVo2Max(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>
+    /// Gets heart rate variability data (milliseconds), averaged per interval bucket.
+    /// Note: iOS reports SDNN while Android (Health Connect) reports RMSSD - both are HRV in ms but
+    /// are computed differently, so values are not directly comparable across platforms.
+    /// </summary>
+    Task<IList<NumericHealthResult>> GetHeartRateVariability(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>Gets lean body mass data (kg), averaged per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetLeanBodyMass(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>
+    /// Gets basal (resting) energy data (kcal), summed per interval bucket.
+    /// On Android this is derived from the basal metabolic rate record.
+    /// </summary>
+    Task<IList<NumericHealthResult>> GetBasalEnergyBurned(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>Gets active energy burned (kcal), summed per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetActiveEnergyBurned(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>Gets floors/flights climbed (count), summed per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetFloorsClimbed(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>Gets wheelchair pushes (count), summed per interval bucket.</summary>
+    Task<IList<NumericHealthResult>> GetWheelchairPushes(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>
+    /// Gets speed data (m/s), averaged per interval bucket. iOS maps this to walking speed.
+    /// </summary>
+    Task<IList<NumericHealthResult>> GetSpeed(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    /// <summary>
+    /// Gets power data (watts), averaged per interval bucket. iOS maps this to cycling power.
+    /// </summary>
+    Task<IList<NumericHealthResult>> GetPower(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    // --- Tier 2 reproductive / cycle-tracking (categorical & event-based, no interval bucketing) ---
+
+    /// <summary>Gets sexual activity records over the time range.</summary>
+    Task<IList<SexualActivityResult>> GetSexualActivity(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default);
+
+    /// <summary>Gets ovulation test records over the time range.</summary>
+    Task<IList<OvulationTestResult>> GetOvulationTests(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default);
+
+    /// <summary>Gets cervical mucus observation records over the time range.</summary>
+    Task<IList<CervicalMucusResult>> GetCervicalMucus(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default);
+
+    /// <summary>Gets intermenstrual bleeding (spotting) events over the time range.</summary>
+    Task<IList<IntermenstrualBleedingResult>> GetIntermenstrualBleeding(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default);
+
+    // --- Tier 3 structured records ---------------------------------------------------------------
+
+    /// <summary>Gets workout / exercise sessions over the time range.</summary>
+    Task<IList<WorkoutResult>> GetWorkouts(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default);
+
+    /// <summary>Gets nutrition / food intake records over the time range.</summary>
+    Task<IList<NutritionResult>> GetNutrition(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default);
 }

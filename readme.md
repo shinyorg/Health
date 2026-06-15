@@ -6,9 +6,11 @@ Apple HealthKit and Android Health Connect for your .NET MAUI apps.
 * Read summary values between timestamps at specified intervals
 * Write health data to Apple HealthKit and Android Health Connect
 * Real-time observation of health data changes via `IAsyncEnumerable<HealthResult>`
-* Query distance, step count, calories, and heart rate
-* Query weight, height, body fat percentage, and resting heart rate
-* Query blood pressure (systolic/diastolic), oxygen saturation, sleep duration, and hydration
+* 30+ cross-platform data types covering activity, body, vitals, nutrition, reproductive/cycle tracking, and workouts
+* Query activity (distance, step count, calories, active/basal energy, floors climbed, wheelchair pushes, speed, power) and heart rate (average, resting, variability)
+* Query body metrics (weight, height, body fat, lean body mass) and vitals (blood pressure, oxygen saturation, blood glucose, body temperature, respiratory rate, VO2 max)
+* Query lifestyle (sleep duration, hydration, nutrition) and workouts/exercise sessions
+* Reproductive & cycle tracking (menstruation flow, sexual activity, ovulation tests, cervical mucus, intermenstrual bleeding)
 * Permission management for both platforms with read/write support
 
 ## How To Use
@@ -113,9 +115,32 @@ await foreach (var result in health.Observe(DataType.StepCount, pollingInterval:
 | Oxygen Saturation | % | OxygenSaturation | OxygenSaturationRecord |
 | Sleep Duration | hours | SleepAnalysis | SleepSessionRecord |
 | Hydration | liters | DietaryWater | HydrationRecord |
+| Blood Glucose | mg/dL | BloodGlucose | BloodGlucoseRecord |
+| Body Temperature | °C | BodyTemperature | BodyTemperatureRecord |
+| Basal Body Temperature | °C | BasalBodyTemperature | BasalBodyTemperatureRecord |
+| Respiratory Rate | breaths/min | RespiratoryRate | RespiratoryRateRecord |
+| VO2 Max | mL/kg/min | VO2Max | Vo2MaxRecord |
+| Heart Rate Variability | ms | HeartRateVariabilitySDNN | HeartRateVariabilityRmssdRecord¹ |
+| Lean Body Mass | kg | LeanBodyMass | LeanBodyMassRecord |
+| Basal Energy Burned | kcal | BasalEnergyBurned | BasalMetabolicRateRecord |
+| Active Energy Burned | kcal | ActiveEnergyBurned | ActiveCaloriesBurnedRecord |
+| Floors Climbed | count | FlightsClimbed | FloorsClimbedRecord |
+| Wheelchair Pushes | count | PushCount | WheelchairPushesRecord |
+| Speed | m/s | WalkingSpeed² | SpeedRecord |
+| Power | watts | CyclingPower² | PowerRecord |
 | Menstruation Flow | flow level | MenstrualFlow | MenstruationFlowRecord |
+| Sexual Activity | protection enum | SexualActivity | SexualActivityRecord |
+| Ovulation Test | result enum | OvulationTestResult | OvulationTestRecord |
+| Cervical Mucus | appearance enum | CervicalMucusQuality | CervicalMucusRecord |
+| Intermenstrual Bleeding | event | IntermenstrualBleeding | IntermenstrualBleedingRecord |
+| Workout | session | HKWorkout | ExerciseSessionRecord |
+| Nutrition | food/macros | Food correlation | NutritionRecord |
 
-> Menstruation flow is categorical and event-based rather than numeric. It uses `MenstruationFlowResult`/`MenstrualFlow`, is read via `GetMenstruationFlow(start, end)` (no interval bucketing), and written with `Write(MenstruationFlowResult)`. The `None` flow level and `IsCycleStart` flag are iOS-only; Health Connect has no `None` value and ignores `IsCycleStart`.
+> ¹ HealthKit reports HRV as **SDNN** while Health Connect reports **RMSSD** — both are in milliseconds but computed differently, so values are not directly comparable across platforms.
+>
+> ² Health Connect's `SpeedRecord`/`PowerRecord` are generic. HealthKit has no generic equivalents, so `Speed` maps to walking speed and `Power` maps to cycling power.
+
+> **Categorical / event-based / structured metrics** (menstruation flow, sexual activity, ovulation tests, cervical mucus, intermenstrual bleeding, workouts, nutrition) are not numeric. Each uses its own result record (e.g. `MenstruationFlowResult`, `SexualActivityResult`, `WorkoutResult`, `NutritionResult`), has **no `Interval` bucketing**, and is read via a dedicated method (`GetMenstruationFlow`, `GetSexualActivity`, `GetOvulationTests`, `GetCervicalMucus`, `GetIntermenstrualBleeding`, `GetWorkouts`, `GetNutrition`). The `MenstrualFlow.None` level and `IsCycleStart` flag are iOS-only; Health Connect has no `None` value and ignores `IsCycleStart`. A `WorkoutResult`'s energy/distance are `null` on Android read (Health Connect stores them as separate records from the exercise session).
 
 ## Setup
 

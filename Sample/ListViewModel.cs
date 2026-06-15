@@ -51,6 +51,19 @@ public partial class ListViewModel(
                 DataType.OxygenSaturation => "O2 Saturation %",
                 DataType.SleepDuration => "Sleep Duration (hrs)",
                 DataType.Hydration => "Hydration (L)",
+                DataType.BloodGlucose => "Blood Glucose (mg/dL)",
+                DataType.BodyTemperature => "Body Temperature (°C)",
+                DataType.BasalBodyTemperature => "Basal Body Temp (°C)",
+                DataType.RespiratoryRate => "Respiratory Rate",
+                DataType.Vo2Max => "VO2 Max",
+                DataType.HeartRateVariability => "HRV (ms)",
+                DataType.LeanBodyMass => "Lean Body Mass (kg)",
+                DataType.BasalEnergyBurned => "Basal Energy (kcal)",
+                DataType.ActiveEnergyBurned => "Active Energy (kcal)",
+                DataType.FloorsClimbed => "Floors Climbed",
+                DataType.WheelchairPushes => "Wheelchair Pushes",
+                DataType.Speed => "Speed (m/s)",
+                DataType.Power => "Power (W)",
                 _ => type.ToString()
             };
         }
@@ -85,6 +98,19 @@ public partial class ListViewModel(
                 DataType.OxygenSaturation => await health.GetOxygenSaturation(start, end, Interval.Hours),
                 DataType.SleepDuration => await health.GetSleepDuration(start, end, Interval.Hours),
                 DataType.Hydration => await health.GetHydration(start, end, Interval.Hours),
+                DataType.BloodGlucose => await health.GetBloodGlucose(start, end, Interval.Hours),
+                DataType.BodyTemperature => await health.GetBodyTemperature(start, end, Interval.Hours),
+                DataType.BasalBodyTemperature => await health.GetBasalBodyTemperature(start, end, Interval.Hours),
+                DataType.RespiratoryRate => await health.GetRespiratoryRate(start, end, Interval.Hours),
+                DataType.Vo2Max => await health.GetVo2Max(start, end, Interval.Hours),
+                DataType.HeartRateVariability => await health.GetHeartRateVariability(start, end, Interval.Hours),
+                DataType.LeanBodyMass => await health.GetLeanBodyMass(start, end, Interval.Hours),
+                DataType.BasalEnergyBurned => await health.GetBasalEnergyBurned(start, end, Interval.Hours),
+                DataType.ActiveEnergyBurned => await health.GetActiveEnergyBurned(start, end, Interval.Hours),
+                DataType.FloorsClimbed => await health.GetFloorsClimbed(start, end, Interval.Hours),
+                DataType.WheelchairPushes => await health.GetWheelchairPushes(start, end, Interval.Hours),
+                DataType.Speed => await health.GetSpeed(start, end, Interval.Hours),
+                DataType.Power => await health.GetPower(start, end, Interval.Hours),
                 _ => []
             };
 
