@@ -142,6 +142,39 @@ await foreach (var result in health.Observe(DataType.StepCount, pollingInterval:
 
 > **Categorical / event-based / structured metrics** (menstruation flow, sexual activity, ovulation tests, cervical mucus, intermenstrual bleeding, workouts, nutrition) are not numeric. Each uses its own result record (e.g. `MenstruationFlowResult`, `SexualActivityResult`, `WorkoutResult`, `NutritionResult`), has **no `Interval` bucketing**, and is read via a dedicated method (`GetMenstruationFlow`, `GetSexualActivity`, `GetOvulationTests`, `GetCervicalMucus`, `GetIntermenstrualBleeding`, `GetWorkouts`, `GetNutrition`). The `MenstrualFlow.None` level and `IsCycleStart` flag are iOS-only; Health Connect has no `None` value and ignores `IsCycleStart`. A `WorkoutResult`'s energy/distance are `null` on Android read (Health Connect stores them as separate records from the exercise session).
 
+## AI Tools
+
+[![NuGet](https://img.shields.io/nuget/v/Shiny.Health.Extensions.AI.svg?label=AI+Extensions)](https://www.nuget.org/packages/Shiny.Health.Extensions.AI/)
+
+`Shiny.Health.Extensions.AI` exposes `IHealthService` as [`Microsoft.Extensions.AI`](https://learn.microsoft.com/dotnet/ai/) tool functions for LLM agents. It uses a few **parameterized** tools (one read tool covers all numeric metrics via a `metric` enum, instead of one tool per metric) so the model's tool list stays short. Opt-in exactly which areas the model can see — read-only by default, write per-area. Resolve `HealthAITools` from DI and pass `.Tools` to any `IChatClient`. AOT-compatible.
+
+```bash
+dotnet add package Shiny.Health.Extensions.AI
+```
+
+```csharp
+using Shiny.Health.Extensions.AI;
+
+builder.Services.AddHealthIntegration();
+builder.Services.AddHealthAITools(tools => tools
+    .AddAllMetrics()                                          // read every numeric metric
+    .AddMetric(DataType.Weight, HealthAICapabilities.ReadWrite)
+    .AddBloodPressure(HealthAICapabilities.ReadWrite)
+    .AddCycleTracking()
+    .AddWorkouts(HealthAICapabilities.ReadWrite)
+    .AddNutrition()
+);
+
+// later, hand the tools to a chat client
+var tools = sp.GetRequiredService<HealthAITools>().Tools;
+var response = await chatClient.GetResponseAsync(
+    messages,
+    new ChatOptions { Tools = [.. tools] }
+);
+```
+
+Generated tools (only for areas you opt-in to): `get_health_metric` / `write_health_metric`, `get_blood_pressure` / `write_blood_pressure`, `get_cycle_records` / `write_menstruation_flow`, `get_workouts` / `write_workout`, `get_nutrition` / `write_nutrition`. The tools assume permissions are already granted — call `RequestPermissions` from your app first.
+
 ## Setup
 
 Install from NuGet: [![NuGet](https://img.shields.io/nuget/v/Shiny.Health.svg?maxAge=2592000)](https://www.nuget.org/packages/Shiny.Health/)

@@ -731,7 +731,7 @@ public class HealthService : IHealthService
 
     public AccessState GetCurrentStatus(DataType dataType)
     {
-        if (!OperatingSystemShim.IsIOSVersionAtLeast(12))
+        if (!OperatingSystem.IsIOSVersionAtLeast(12))
             return AccessState.NotSupported;
 
         if (!HKHealthStore.IsHealthDataAvailable)

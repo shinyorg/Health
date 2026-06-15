@@ -114,6 +114,22 @@ triggers:
   - SexualActivityProtection
   - OvulationTestOutcome
   - CervicalMucusAppearance
+  - AI tools
+  - AI agent
+  - LLM tools
+  - tool calling
+  - function calling
+  - Microsoft.Extensions.AI
+  - AIFunction
+  - AITool
+  - IChatClient
+  - chat tools
+  - Shiny.Health.Extensions.AI
+  - AddHealthAITools
+  - HealthAITools
+  - IHealthAIToolBuilder
+  - HealthAICapabilities
+  - health agent
 ---
 
 # Shiny Health Skill
@@ -631,9 +647,46 @@ await foreach (var result in health.Observe(DataType.HeartRate, pollingInterval:
 7. **Menstruation flow is special** - It is categorical and event-based: use `MenstruationFlowResult`/`MenstrualFlow`, read with `GetMenstruationFlow(start, end)` (no `Interval`), and remember `None`/`IsCycleStart` are iOS-only
 8. **Register early** - Call `AddHealthIntegration()` in `MauiProgram.cs` during app startup
 
+## AI Tool Integration (Shiny.Health.Extensions.AI)
+
+The optional `Shiny.Health.Extensions.AI` package exposes `IHealthService` as `Microsoft.Extensions.AI` tool functions (`AIFunction`s) for LLM agents. It uses a small set of **parameterized** tools (one read tool covers all numeric metrics via a `metric` enum arg, not one tool per metric). Read-only by default; write is opt-in per area. AOT-compatible (hand-built schemas, `JsonNode` results — no reflection).
+
+```csharp
+using Shiny.Health;
+using Shiny.Health.Extensions.AI;
+
+builder.Services.AddHealthIntegration();          // registers IHealthService
+builder.Services.AddHealthAITools(tools => tools
+    .AddAllMetrics()                                          // read all numeric metrics
+    .AddMetric(DataType.Weight, HealthAICapabilities.ReadWrite)
+    .AddBloodPressure(HealthAICapabilities.ReadWrite)
+    .AddCycleTracking()                                       // read cycle records
+    .AddWorkouts(HealthAICapabilities.ReadWrite)
+    .AddNutrition()
+);
+
+// resolve the bundle and pass the tools to any IChatClient
+var tools = sp.GetRequiredService<HealthAITools>().Tools;
+var response = await chatClient.GetResponseAsync(
+    messages,
+    new ChatOptions { Tools = [.. tools] }
+);
+```
+
+Key types:
+- `AddHealthAITools(Action<IHealthAIToolBuilder>)` — DI extension; throws if nothing is added.
+- `IHealthAIToolBuilder` — `AddMetric(DataType, capabilities)`, `AddAllMetrics(...)`, `AddBloodPressure(...)`, `AddCycleTracking(...)`, `AddWorkouts(...)`, `AddNutrition(...)`. `AddMetric` throws for non-numeric `DataType`s.
+- `HealthAICapabilities` `[Flags]` — `None`, `Read` (default), `Write`, `ReadWrite`.
+- `HealthAITools` — resolve from DI; `.Tools` is `IReadOnlyList<AITool>`.
+
+Generated tools (only for opted-in areas; enum args constrained to what you allowed): `get_health_metric`, `write_health_metric`, `get_blood_pressure`, `write_blood_pressure`, `get_cycle_records` (`kind` enum), `write_menstruation_flow`, `get_workouts`, `write_workout`, `get_nutrition`, `write_nutrition`. Dates are ISO-8601; `interval` is `minutes`/`hours`/`days`.
+
+> The AI tools assume permissions are already granted — they do **not** trigger the platform permission UI (needs a foreground activity). Call `IHealthService.RequestPermissions(...)` from the app before invoking the agent.
+
 ## Common Packages
 
 ```bash
-dotnet add package Shiny.Health          # Core health data library
-dotnet add package Shiny.Core            # Required dependency
+dotnet add package Shiny.Health                 # Core health data library
+dotnet add package Shiny.Health.Extensions.AI   # Optional: Microsoft.Extensions.AI tool surface for LLM agents
+dotnet add package Shiny.Core                   # Required dependency
 ```

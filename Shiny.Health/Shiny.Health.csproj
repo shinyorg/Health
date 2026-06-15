@@ -48,7 +48,7 @@
         <None Include="Platforms\**\*.cs" />
         <Compile Remove="Platforms\**\*.cs" />
 
-        <PackageReference Include="Shiny.Core" Version="4.0.1" />
+        <PackageReference Include="Shiny.Core" Version="5.0.0-beta-0132" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetFramework.Contains('android'))">

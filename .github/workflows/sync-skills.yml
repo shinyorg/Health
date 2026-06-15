@@ -11,6 +11,9 @@ on:
 jobs:
   sync-skills:
     runs-on: ubuntu-latest
+    # Only ever sync from branches starting with "v" (covers manual workflow_dispatch too,
+    # which is not constrained by the push branch filter above).
+    if: startsWith(github.ref_name, 'v')
 
     steps:
       - name: Checkout source repository
@@ -32,13 +35,22 @@ jobs:
 
       - name: Sync skills directory
         run: |
-          # Copy skills content to the shiny-client plugin in the skills repo
-          if [ -d "source/skills/shiny-health" ]; then
-            # Remove existing skill directory to ensure clean sync
-            rm -rf skills-repo/plugins/shiny-client/skills/shiny-health
-            mkdir -p skills-repo/plugins/shiny-client/skills
-            cp -r source/skills/shiny-health skills-repo/plugins/shiny-client/skills/
+          # Skills repo is a multi-plugin marketplace:
+          #   plugins/<plugin>/skills/<skill>/
+          # The shiny-health skill belongs to the shiny-client plugin.
+          SRC="source/skills/shiny-health"
+          DEST="skills-repo/plugins/shiny-client/skills"
+
+          if [ ! -d "$SRC" ]; then
+            echo "::error::Source skill directory '$SRC' not found"
+            exit 1
           fi
+
+          # Remove the existing skill directory to ensure a clean sync (handles
+          # renamed/removed reference files), then copy the whole skill folder.
+          rm -rf "$DEST/shiny-health"
+          mkdir -p "$DEST"
+          cp -r "$SRC" "$DEST/"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
