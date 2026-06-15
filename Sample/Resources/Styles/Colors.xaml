@@ -60,6 +60,8 @@
     <Color x:Key="SleepBackground">#F5F3FF</Color>
     <Color x:Key="HydrationColor">#0891B2</Color>
     <Color x:Key="HydrationBackground">#ECFEFF</Color>
+    <Color x:Key="MenstruationColor">#DB2777</Color>
+    <Color x:Key="MenstruationBackground">#FDF2F8</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>

@@ -401,6 +401,31 @@
                     </Border>
                 </Grid>
 
+                <!-- Cycle Tracking Section -->
+                <Label Text="Cycle Tracking"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" />
+
+                <!-- Menstruation Card -->
+                <Border StrokeShape="RoundRectangle 12"
+                        StrokeThickness="0"
+                        BackgroundColor="{StaticResource MenstruationBackground}"
+                        Padding="16">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Menstruation"
+                               FontSize="13"
+                               TextColor="{StaticResource TextSecondary}" />
+                        <Label Text="{Binding MenstruationFlow}"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource MenstruationColor}" />
+                        <Label Text="{Binding MenstruationRecordCount, StringFormat='{0:N0} record(s) - latest flow'}"
+                               FontSize="12"
+                               TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Border>
+
                 <Label Text="Tap a card for hourly details"
                        FontSize="12"
                        TextColor="{StaticResource TextMuted}"

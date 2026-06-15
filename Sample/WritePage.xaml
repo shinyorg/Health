@@ -129,6 +129,42 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- Menstruation Flow Entry -->
+            <Border StrokeShape="RoundRectangle 12"
+                    StrokeThickness="0"
+                    BackgroundColor="{StaticResource Surface}"
+                    Padding="16"
+                    IsVisible="{Binding IsMenstruationType}">
+                <Border.Shadow>
+                    <Shadow Brush="{StaticResource Gray300Brush}" Offset="0,2" Radius="8" Opacity="0.3" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Menstruation Flow"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextPrimary}" />
+
+                    <Picker Title="Select a flow level"
+                            ItemsSource="{Binding MenstrualFlows}"
+                            SelectedItem="{Binding SelectedMenstrualFlow}"
+                            TextColor="{StaticResource TextPrimary}" />
+
+                    <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                        <Label Text="Cycle start (first day)"
+                               FontSize="14"
+                               TextColor="{StaticResource TextSecondary}"
+                               VerticalOptions="Center"
+                               Grid.Column="0" />
+                        <Switch IsToggled="{Binding IsCycleStart}"
+                                Grid.Column="1" />
+                    </Grid>
+
+                    <Label Text="Note: 'None' and cycle start are iOS-only; Android maps None to Unspecified and ignores cycle start."
+                           FontSize="12"
+                           TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
+            </Border>
+
             <!-- Write Button -->
             <Button Text="Write Data"
                     Command="{Binding WriteCommand}"

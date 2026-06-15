@@ -74,6 +74,11 @@ public partial class ObserveViewModel(IHealthService health) : ObservableObject
                             $"{bp.Systolic:N0}/{bp.Diastolic:N0} mmHg",
                             $"{bp.Start:HH:mm} - {bp.End:HH:mm}"
                         ),
+                        MenstruationFlowResult mf => new ObserveEntry(
+                            DateTimeOffset.Now,
+                            $"{mf.Flow}{(mf.IsCycleStart ? " (cycle start)" : "")}",
+                            $"{mf.Start:HH:mm} - {mf.End:HH:mm}"
+                        ),
                         NumericHealthResult nr => new ObserveEntry(
                             DateTimeOffset.Now,
                             $"{nr.Value:N2}",

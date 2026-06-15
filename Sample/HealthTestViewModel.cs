@@ -58,6 +58,12 @@ public partial class HealthTestViewModel(
     [ObservableProperty]
     double hydration;
 
+    [ObservableProperty]
+    string menstruationFlow = "No data";
+
+    [ObservableProperty]
+    int menstruationRecordCount;
+
     public bool HasError => !string.IsNullOrEmpty(ErrorText);
 
 
@@ -95,7 +101,8 @@ public partial class HealthTestViewModel(
                 DataType.BloodPressure,
                 DataType.OxygenSaturation,
                 DataType.SleepDuration,
-                DataType.Hydration
+                DataType.Hydration,
+                DataType.MenstruationFlow
             );
 
             if (Start >= End)
@@ -133,6 +140,14 @@ public partial class HealthTestViewModel(
 
             SleepDuration = (await health.GetSleepDuration(Start, End, Interval.Days)).Sum(x => x.Value);
             Hydration = (await health.GetHydration(Start, End, Interval.Days)).Sum(x => x.Value);
+
+            // Menstruation flow is categorical and event-based - no interval bucketing
+            var menstruationData = await health.GetMenstruationFlow(Start, End);
+            MenstruationRecordCount = menstruationData.Count;
+            var latest = menstruationData.OrderByDescending(x => x.Start).FirstOrDefault();
+            MenstruationFlow = latest == null
+                ? "No data"
+                : $"{latest.Flow}{(latest.IsCycleStart ? " (cycle start)" : "")}";
         }
         catch (Exception ex)
         {

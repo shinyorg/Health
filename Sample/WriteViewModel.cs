@@ -24,10 +24,14 @@ public partial class WriteViewModel(
     [ObservableProperty]
     string? diastolicText;
 
+    [ObservableProperty]
+    bool isCycleStart;
+
     public bool HasError => !string.IsNullOrEmpty(ErrorText);
     public bool IsNotBusy => !IsBusy;
-    public bool IsNumericType => SelectedDataType != DataType.BloodPressure;
+    public bool IsNumericType => SelectedDataType is not (DataType.BloodPressure or DataType.MenstruationFlow);
     public bool IsBloodPressureType => SelectedDataType == DataType.BloodPressure;
+    public bool IsMenstruationType => SelectedDataType == DataType.MenstruationFlow;
 
     public List<DataType> DataTypes { get; } =
     [
@@ -42,8 +46,14 @@ public partial class WriteViewModel(
         DataType.BloodPressure,
         DataType.OxygenSaturation,
         DataType.SleepDuration,
-        DataType.Hydration
+        DataType.Hydration,
+        DataType.MenstruationFlow
     ];
+
+    public List<MenstrualFlow> MenstrualFlows { get; } = Enum.GetValues<MenstrualFlow>().ToList();
+
+    [ObservableProperty]
+    MenstrualFlow selectedMenstrualFlow = MenstrualFlow.Medium;
 
     DataType selectedDataType = DataType.StepCount;
     public DataType SelectedDataType
@@ -55,6 +65,7 @@ public partial class WriteViewModel(
             {
                 OnPropertyChanged(nameof(IsNumericType));
                 OnPropertyChanged(nameof(IsBloodPressureType));
+                OnPropertyChanged(nameof(IsMenstruationType));
                 OnPropertyChanged(nameof(UnitLabel));
             }
         }
@@ -104,6 +115,11 @@ public partial class WriteViewModel(
 
                 await health.RequestPermissions(PermissionType.Write, DataType.BloodPressure);
                 await health.Write(new BloodPressureResult(now, now, systolic, diastolic));
+            }
+            else if (SelectedDataType == DataType.MenstruationFlow)
+            {
+                await health.RequestPermissions(PermissionType.Write, DataType.MenstruationFlow);
+                await health.Write(new MenstruationFlowResult(now, now, SelectedMenstrualFlow, IsCycleStart));
             }
             else
             {
