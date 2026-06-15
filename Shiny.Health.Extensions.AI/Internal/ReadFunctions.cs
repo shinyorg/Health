@@ -42,7 +42,7 @@ sealed class GetMetricFunction : HealthAIFunctionBase
 
         var buckets = new JsonArray();
         foreach (var r in results)
-            buckets.Add(new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["value"] = r.Value });
+            buckets.Add((JsonNode)new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["value"] = r.Value });
 
         return new JsonObject
         {
@@ -82,7 +82,7 @@ sealed class GetBloodPressureFunction : HealthAIFunctionBase
 
         var buckets = new JsonArray();
         foreach (var r in results)
-            buckets.Add(new JsonObject
+            buckets.Add((JsonNode)new JsonObject
             {
                 ["start"] = Iso(r.Start),
                 ["end"] = Iso(r.End),
@@ -130,27 +130,27 @@ sealed class GetCycleRecordsFunction : HealthAIFunctionBase
         {
             case "menstruation_flow":
                 foreach (var r in await this.Health.GetMenstruationFlow(start, end, cancellationToken).ConfigureAwait(false))
-                    records.Add(new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["flow"] = EnumSlugs.ToSlug(r.Flow.ToString()), ["isCycleStart"] = r.IsCycleStart });
+                    records.Add((JsonNode)new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["flow"] = EnumSlugs.ToSlug(r.Flow.ToString()), ["isCycleStart"] = r.IsCycleStart });
                 break;
 
             case "sexual_activity":
                 foreach (var r in await this.Health.GetSexualActivity(start, end, cancellationToken).ConfigureAwait(false))
-                    records.Add(new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["protection"] = EnumSlugs.ToSlug(r.Protection.ToString()) });
+                    records.Add((JsonNode)new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["protection"] = EnumSlugs.ToSlug(r.Protection.ToString()) });
                 break;
 
             case "ovulation_test":
                 foreach (var r in await this.Health.GetOvulationTests(start, end, cancellationToken).ConfigureAwait(false))
-                    records.Add(new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["outcome"] = EnumSlugs.ToSlug(r.Outcome.ToString()) });
+                    records.Add((JsonNode)new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["outcome"] = EnumSlugs.ToSlug(r.Outcome.ToString()) });
                 break;
 
             case "cervical_mucus":
                 foreach (var r in await this.Health.GetCervicalMucus(start, end, cancellationToken).ConfigureAwait(false))
-                    records.Add(new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["appearance"] = EnumSlugs.ToSlug(r.Appearance.ToString()) });
+                    records.Add((JsonNode)new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End), ["appearance"] = EnumSlugs.ToSlug(r.Appearance.ToString()) });
                 break;
 
             case "intermenstrual_bleeding":
                 foreach (var r in await this.Health.GetIntermenstrualBleeding(start, end, cancellationToken).ConfigureAwait(false))
-                    records.Add(new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End) });
+                    records.Add((JsonNode)new JsonObject { ["start"] = Iso(r.Start), ["end"] = Iso(r.End) });
                 break;
 
             default:
@@ -184,7 +184,7 @@ sealed class GetWorkoutsFunction : HealthAIFunctionBase
 
         var list = new JsonArray();
         foreach (var w in await this.Health.GetWorkouts(start, end, cancellationToken).ConfigureAwait(false))
-            list.Add(new JsonObject
+            list.Add((JsonNode)new JsonObject
             {
                 ["start"] = Iso(w.Start),
                 ["end"] = Iso(w.End),
@@ -221,7 +221,7 @@ sealed class GetNutritionFunction : HealthAIFunctionBase
 
         var list = new JsonArray();
         foreach (var n in await this.Health.GetNutrition(start, end, cancellationToken).ConfigureAwait(false))
-            list.Add(new JsonObject
+            list.Add((JsonNode)new JsonObject
             {
                 ["start"] = Iso(n.Start),
                 ["end"] = Iso(n.End),

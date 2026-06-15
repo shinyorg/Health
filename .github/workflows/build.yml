@@ -35,6 +35,9 @@ jobs:
     - name: Build
       run: dotnet build Shiny.Health/Shiny.Health.csproj -c Release -p:PublicRelease=true
 
+    - name: Build AI Extensions
+      run: dotnet build Shiny.Health.Extensions.AI/Shiny.Health.Extensions.AI.csproj -c Release -p:PublicRelease=true
+
     - name: Post NuGet Artifacts
       uses: actions/upload-artifact@v4
       with:

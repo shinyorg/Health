@@ -3,6 +3,9 @@ using Shiny.Health.Extensions.AI.Internal;
 
 namespace Shiny.Health.Extensions.AI;
 
+/// <summary>
+/// Dependency-injection extensions for exposing <see cref="IHealthService"/> as LLM tools.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>

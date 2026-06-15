@@ -19,7 +19,7 @@ static class SchemaJson
         {
             var arr = new JsonArray();
             foreach (var r in required)
-                arr.Add(r);
+                arr.Add((JsonNode)r);
             o["required"] = arr;
         }
         return o;
@@ -32,7 +32,7 @@ static class SchemaJson
         {
             var arr = new JsonArray();
             foreach (var v in enumValues)
-                arr.Add(v);
+                arr.Add((JsonNode)v);
             o["enum"] = arr;
         }
         return o;

@@ -2,62 +2,109 @@ using System;
 
 namespace Shiny.Health;
 
+/// <summary>
+/// The kind of access being requested for a health data type.
+/// </summary>
 [Flags]
 public enum PermissionType
 {
+    /// <summary>Permission to read the data type.</summary>
     Read = 1,
+    /// <summary>Permission to write the data type.</summary>
     Write = 2,
+    /// <summary>Permission to both read and write the data type.</summary>
     ReadWrite = Read | Write
 }
 
+/// <summary>
+/// The bucket size used when aggregating numeric metrics over a time range.
+/// </summary>
 public enum Interval
 {
+    /// <summary>Aggregate into one bucket per minute.</summary>
     Minutes,
+    /// <summary>Aggregate into one bucket per hour.</summary>
     Hours,
+    /// <summary>Aggregate into one bucket per day.</summary>
     Days
 }
 
+/// <summary>
+/// A health data type that can be read, written, observed, or have permissions requested for it.
+/// </summary>
 public enum DataType
 {
+    /// <summary>Number of steps taken.</summary>
     StepCount,
+    /// <summary>Heart rate (beats per minute).</summary>
     HeartRate,
+    /// <summary>Energy burned (kilocalories).</summary>
     Calories,
+    /// <summary>Distance travelled (meters).</summary>
     Distance,
+    /// <summary>Body weight (kilograms).</summary>
     Weight,
+    /// <summary>Body height (meters).</summary>
     Height,
+    /// <summary>Body fat percentage (0-100).</summary>
     BodyFatPercentage,
+    /// <summary>Resting heart rate (beats per minute).</summary>
     RestingHeartRate,
+    /// <summary>Blood pressure (systolic/diastolic, mmHg).</summary>
     BloodPressure,
+    /// <summary>Blood oxygen saturation (0-100%).</summary>
     OxygenSaturation,
+    /// <summary>Sleep duration (hours).</summary>
     SleepDuration,
+    /// <summary>Water intake (liters).</summary>
     Hydration,
+    /// <summary>Menstruation flow records.</summary>
     MenstruationFlow,
 
     // Tier 1 - numeric metrics
+    /// <summary>Blood glucose (mg/dL).</summary>
     BloodGlucose,
+    /// <summary>Body temperature (°C).</summary>
     BodyTemperature,
+    /// <summary>Basal (resting) body temperature (°C).</summary>
     BasalBodyTemperature,
+    /// <summary>Respiratory rate (breaths per minute).</summary>
     RespiratoryRate,
+    /// <summary>Maximal oxygen uptake (mL/kg/min).</summary>
     Vo2Max,
+    /// <summary>Heart rate variability (milliseconds).</summary>
     HeartRateVariability,
+    /// <summary>Lean body mass (kilograms).</summary>
     LeanBodyMass,
+    /// <summary>Basal (resting) energy burned (kilocalories).</summary>
     BasalEnergyBurned,
+    /// <summary>Active energy burned (kilocalories).</summary>
     ActiveEnergyBurned,
+    /// <summary>Floors / flights of stairs climbed (count).</summary>
     FloorsClimbed,
+    /// <summary>Wheelchair pushes (count).</summary>
     WheelchairPushes,
 
     // Tier 3 - fitness numeric metrics
+    /// <summary>Movement speed (m/s); maps to walking speed on iOS.</summary>
     Speed,
+    /// <summary>Power output (watts); maps to cycling power on iOS.</summary>
     Power,
 
     // Tier 2 - reproductive / cycle-tracking (categorical & event based)
+    /// <summary>Sexual activity records.</summary>
     SexualActivity,
+    /// <summary>Ovulation (luteinizing hormone) test records.</summary>
     OvulationTest,
+    /// <summary>Cervical mucus observation records.</summary>
     CervicalMucus,
+    /// <summary>Intermenstrual bleeding (spotting) event records.</summary>
     IntermenstrualBleeding,
 
     // Tier 3 - structured records
+    /// <summary>Workout / exercise sessions.</summary>
     Workout,
+    /// <summary>Nutrition / food intake records.</summary>
     Nutrition
 }
 
@@ -133,10 +180,15 @@ public enum CervicalMucusAppearance
 /// </summary>
 public enum MealType
 {
+    /// <summary>The meal type was not specified.</summary>
     Unknown,
+    /// <summary>Breakfast.</summary>
     Breakfast,
+    /// <summary>Lunch.</summary>
     Lunch,
+    /// <summary>Dinner.</summary>
     Dinner,
+    /// <summary>A snack.</summary>
     Snack
 }
 
@@ -147,35 +199,69 @@ public enum MealType
 /// </summary>
 public enum WorkoutType
 {
+    /// <summary>Any activity that does not map to one of the known types.</summary>
     Other,
+    /// <summary>Running.</summary>
     Running,
+    /// <summary>Walking.</summary>
     Walking,
+    /// <summary>Hiking.</summary>
     Hiking,
+    /// <summary>Cycling.</summary>
     Cycling,
+    /// <summary>Swimming.</summary>
     Swimming,
+    /// <summary>Rowing.</summary>
     Rowing,
+    /// <summary>Elliptical trainer.</summary>
     Elliptical,
+    /// <summary>Stair climbing.</summary>
     StairClimbing,
+    /// <summary>Strength / weight training.</summary>
     StrengthTraining,
+    /// <summary>High-intensity interval training (HIIT).</summary>
     HighIntensityIntervalTraining,
+    /// <summary>Yoga.</summary>
     Yoga,
+    /// <summary>Pilates.</summary>
     Pilates,
+    /// <summary>Tennis.</summary>
     Tennis,
+    /// <summary>Basketball.</summary>
     Basketball,
+    /// <summary>Soccer / football.</summary>
     Soccer,
+    /// <summary>Baseball.</summary>
     Baseball,
+    /// <summary>Golf.</summary>
     Golf,
+    /// <summary>Boxing.</summary>
     Boxing,
+    /// <summary>Martial arts.</summary>
     MartialArts,
+    /// <summary>Dancing.</summary>
     Dancing
 }
 
+/// <summary>
+/// Base type for all health results, identifying the data type and the time range it covers.
+/// </summary>
+/// <param name="Type">The data type this result represents.</param>
+/// <param name="Start">The start of the result's time range.</param>
+/// <param name="End">The end of the result's time range.</param>
 public abstract record HealthResult(
     DataType Type,
     DateTimeOffset Start,
     DateTimeOffset End
 );
 
+/// <summary>
+/// A single numeric health result for an interval bucket (e.g. steps, weight, heart rate).
+/// </summary>
+/// <param name="DataType">The numeric data type this result represents.</param>
+/// <param name="Start">The start of the bucket's time range.</param>
+/// <param name="End">The end of the bucket's time range.</param>
+/// <param name="Value">The aggregated value for the bucket, in the data type's unit.</param>
 public record NumericHealthResult(
     DataType DataType,
     DateTimeOffset Start,
@@ -183,6 +269,13 @@ public record NumericHealthResult(
     double Value
 ) : HealthResult(DataType, Start, End);
 
+/// <summary>
+/// A blood pressure result for an interval bucket, with separate systolic and diastolic values (mmHg).
+/// </summary>
+/// <param name="Start">The start of the bucket's time range.</param>
+/// <param name="End">The end of the bucket's time range.</param>
+/// <param name="Systolic">The systolic pressure in mmHg.</param>
+/// <param name="Diastolic">The diastolic pressure in mmHg.</param>
 public record BloodPressureResult(
     DateTimeOffset Start,
     DateTimeOffset End,
