@@ -38,6 +38,13 @@ triggers:
   - GetOxygenSaturation
   - GetSleepDuration
   - GetHydration
+  - GetMenstruationFlow
+  - menstruation
+  - menstrual flow
+  - period tracking
+  - cycle tracking
+  - MenstruationFlowResult
+  - MenstrualFlow
   - RequestPermissions
   - PermissionType
   - write health
@@ -151,6 +158,7 @@ Android uses Health Connect (the replacement for the deprecated Google Fit API).
 <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
 <uses-permission android:name="android.permission.health.READ_SLEEP" />
 <uses-permission android:name="android.permission.health.READ_HYDRATION" />
+<uses-permission android:name="android.permission.health.READ_MENSTRUATION" />
 <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
 <!-- Optional: declare which health data your app writes (only include the types you need) -->
@@ -166,6 +174,7 @@ Android uses Health Connect (the replacement for the deprecated Google Fit API).
 <uses-permission android:name="android.permission.health.WRITE_OXYGEN_SATURATION" />
 <uses-permission android:name="android.permission.health.WRITE_SLEEP" />
 <uses-permission android:name="android.permission.health.WRITE_HYDRATION" />
+<uses-permission android:name="android.permission.health.WRITE_MENSTRUATION" />
 
 <!-- Allow your app to discover Health Connect -->
 <queries>
@@ -199,8 +208,12 @@ public enum DataType
 {
     StepCount, HeartRate, Calories, Distance,
     Weight, Height, BodyFatPercentage, RestingHeartRate,
-    BloodPressure, OxygenSaturation, SleepDuration, Hydration
+    BloodPressure, OxygenSaturation, SleepDuration, Hydration,
+    MenstruationFlow
 }
+
+// Menstrual flow level (categorical). None is iOS-only; Android maps it to Unspecified.
+public enum MenstrualFlow { Unspecified, None, Light, Medium, Heavy }
 
 // Result for single-value metrics
 public record NumericHealthResult(
@@ -217,6 +230,15 @@ public record BloodPressureResult(
     double Systolic,
     double Diastolic
 ) : HealthResult(DataType.BloodPressure, Start, End);
+
+// Result for menstruation flow (categorical, event-based)
+// IsCycleStart marks the first day of the cycle (iOS only; always false on Android)
+public record MenstruationFlowResult(
+    DateTimeOffset Start,
+    DateTimeOffset End,
+    MenstrualFlow Flow,
+    bool IsCycleStart = false
+) : HealthResult(DataType.MenstruationFlow, Start, End);
 ```
 
 ### IHealthService Interface
@@ -238,6 +260,7 @@ public interface IHealthService
     // Write health data
     Task Write(NumericHealthResult result, CancellationToken cancelToken = default);
     Task Write(BloodPressureResult result, CancellationToken cancelToken = default);
+    Task Write(MenstruationFlowResult result, CancellationToken cancelToken = default);
 
     // Activity metrics
     Task<IList<NumericHealthResult>> GetStepCounts(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
@@ -258,6 +281,9 @@ public interface IHealthService
     // Lifestyle
     Task<IList<NumericHealthResult>> GetSleepDuration(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
     Task<IList<NumericHealthResult>> GetHydration(DateTimeOffset start, DateTimeOffset end, Interval interval, CancellationToken cancelToken = default);
+
+    // Menstruation flow is categorical/event-based - no interval bucketing, returns individual records
+    Task<IList<MenstruationFlowResult>> GetMenstruationFlow(DateTimeOffset start, DateTimeOffset end, CancellationToken cancelToken = default);
 }
 ```
 
@@ -277,6 +303,9 @@ public interface IHealthService
 | Oxygen Saturation | % | OxygenSaturation | OxygenSaturationRecord |
 | Sleep Duration | hours | SleepAnalysis (category) | SleepSessionRecord |
 | Hydration | liters | DietaryWater | HydrationRecord |
+| Menstruation Flow | flow level | MenstrualFlow (category) | MenstruationFlowRecord |
+
+> **Menstruation flow is different from the other metrics**: it is categorical (a `MenstrualFlow` level, not a `double`) and event-based, so it uses `MenstruationFlowResult`, has no `Interval` bucketing, and is read via `GetMenstruationFlow(start, end)`. iOS exposes a `None` level and an `IsCycleStart` flag (persisted via HealthKit cycle metadata); Health Connect has no `None` value (mapped to `Unspecified`) and ignores `IsCycleStart`.
 
 ## Usage Examples
 
@@ -417,6 +446,26 @@ var sleepStart = now.AddHours(-8);
 await health.Write(new NumericHealthResult(DataType.SleepDuration, sleepStart, now, 0)); // Value is ignored, duration derived from Start/End
 ```
 
+### Menstruation / Period Tracking
+```csharp
+IHealthService health; // inject via DI
+
+// Request read+write access for menstruation flow
+await health.RequestPermissions(PermissionType.ReadWrite, DataType.MenstruationFlow);
+
+var today = DateTimeOffset.Now;
+
+// Log today's flow. IsCycleStart: true marks the first day of the period (iOS persists this;
+// Android ignores it - model the period span separately there if needed).
+await health.Write(new MenstruationFlowResult(today, today, MenstrualFlow.Medium, IsCycleStart: true));
+await health.Write(new MenstruationFlowResult(today.AddDays(1), today.AddDays(1), MenstrualFlow.Light));
+
+// Read back the cycle's records (categorical + event-based, so NO Interval bucketing)
+var records = await health.GetMenstruationFlow(today.AddMonths(-1), today);
+foreach (var r in records)
+    Console.WriteLine($"{r.Start:d}: {r.Flow}{(r.IsCycleStart ? " (cycle start)" : "")}");
+```
+
 ### Observing Real-Time Health Data
 ```csharp
 IHealthService health; // inject via DI
@@ -469,7 +518,8 @@ await foreach (var result in health.Observe(DataType.HeartRate, pollingInterval:
 4. **Use CancellationToken** - Pass cancellation tokens for long-running queries
 5. **Sum vs Average** - Use `.Sum()` for cumulative metrics (steps, calories, distance, hydration, sleep) and `.Average()` for point-in-time metrics (heart rate, weight, height, body fat, O2 sat, resting HR)
 6. **Blood pressure is special** - It returns `BloodPressureResult` (not `NumericHealthResult`) with separate `Systolic` and `Diastolic` values
-7. **Register early** - Call `AddHealthIntegration()` in `MauiProgram.cs` during app startup
+7. **Menstruation flow is special** - It is categorical and event-based: use `MenstruationFlowResult`/`MenstrualFlow`, read with `GetMenstruationFlow(start, end)` (no `Interval`), and remember `None`/`IsCycleStart` are iOS-only
+8. **Register early** - Call `AddHealthIntegration()` in `MauiProgram.cs` during app startup
 
 ## Common Packages
 

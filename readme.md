@@ -113,6 +113,9 @@ await foreach (var result in health.Observe(DataType.StepCount, pollingInterval:
 | Oxygen Saturation | % | OxygenSaturation | OxygenSaturationRecord |
 | Sleep Duration | hours | SleepAnalysis | SleepSessionRecord |
 | Hydration | liters | DietaryWater | HydrationRecord |
+| Menstruation Flow | flow level | MenstrualFlow | MenstruationFlowRecord |
+
+> Menstruation flow is categorical and event-based rather than numeric. It uses `MenstruationFlowResult`/`MenstrualFlow`, is read via `GetMenstruationFlow(start, end)` (no interval bucketing), and written with `Write(MenstruationFlowResult)`. The `None` flow level and `IsCycleStart` flag are iOS-only; Health Connect has no `None` value and ignores `IsCycleStart`.
 
 ## Setup
 
