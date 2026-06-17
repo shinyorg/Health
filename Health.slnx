@@ -1,0 +1,16 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".github/workflows/build.yml" />
+    <File Path="nuget.png" />
+    <File Path="readme.md" />
+    <File Path="version.json" />
+  </Folder>
+  <Project Path="Sample/Sample.csproj" />
+  <Project Path="Shiny.Health.Extensions.AI/Shiny.Health.Extensions.AI.csproj" />
+  <Project Path="Shiny.Health/Shiny.Health.csproj" />
+</Solution>
