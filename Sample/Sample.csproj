@@ -39,6 +39,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Shiny.Health\Shiny.Health.csproj"/>
+        <ProjectReference Include="..\Shiny.Health.Extensions.AI\Shiny.Health.Extensions.AI.csproj"/>
     </ItemGroup>
 
 </Project>
