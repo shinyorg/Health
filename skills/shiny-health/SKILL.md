@@ -47,6 +47,8 @@ triggers:
   - MenstrualFlow
   - RequestPermissions
   - PermissionType
+  - IsAvailable
+  - health capability
   - write health
   - write steps
   - write weight
@@ -343,6 +345,9 @@ public record MenstruationFlowResult(
 ```csharp
 public interface IHealthService
 {
+    // True if the platform health store is usable (iOS: always; Android: Health Connect installed & SDK OK)
+    bool IsAvailable { get; }
+
     // Observe real-time health data changes (forward-only, yields new samples as recorded)
     // iOS: push-based HKAnchoredObjectQuery; Android: polls Health Connect change tokens
     IAsyncEnumerable<HealthResult> Observe(DataType dataType, TimeSpan? pollingInterval = null, CancellationToken cancelToken = default);
@@ -638,7 +643,8 @@ await foreach (var result in health.Observe(DataType.HeartRate, pollingInterval:
 
 ## Best Practices
 
-1. **Always request permissions first** - Call `RequestPermissions` before reading or writing data. Use `PermissionType.Write` or `PermissionType.ReadWrite` when writing
+1. **Gate on availability** - Check `IsAvailable` (Android: Health Connect installed & up to date) before reading/writing
+2. **Always request permissions first** - Call `RequestPermissions` before reading or writing data. Use `PermissionType.Write` or `PermissionType.ReadWrite` when writing
 2. **Use appropriate intervals** - Use `Interval.Days` for summaries, `Interval.Hours` for detailed breakdowns
 3. **Handle empty results** - Check `.Any()` before calling `.Average()` to avoid `InvalidOperationException`
 4. **Use CancellationToken** - Pass cancellation tokens for long-running queries

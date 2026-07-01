@@ -18,6 +18,10 @@ Apple HealthKit and Android Health Connect for your .NET MAUI apps.
 ```csharp
 IHealthService health; // inject via DI
 
+// is the platform health store available at all? (Android: Health Connect installed & up to date)
+if (!health.IsAvailable)
+    return;
+
 // request read permissions
 var result = await health.RequestPermissions(
     DataType.Calories,

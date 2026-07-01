@@ -14,6 +14,8 @@ namespace Shiny.Health;
 public class HealthService : IHealthService
 {
     public bool IsAvailable => HKHealthStore.IsHealthDataAvailable;
+
+
     public async IAsyncEnumerable<HealthResult> Observe(
         DataType dataType,
         TimeSpan? pollingInterval = null,
