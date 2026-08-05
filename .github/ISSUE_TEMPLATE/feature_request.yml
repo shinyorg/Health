@@ -1,0 +1,43 @@
+name: Feature Request
+description: You have an idea for an enhancement within Shiny.Health
+title: "[Feature Request]: "
+labels: [feature request, unverified]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Shiny.Health is a cross-platform API - features generally need to be expressible on BOTH Apple HealthKit and Android Health Connect.
+        If a feature only exists on one platform, please say so and explain what should happen on the other.
+        Documentation is at https://shinylib.net/health
+  - type: checkboxes
+    id: operatingsystems
+    attributes:
+      label: What operating system(s) does this apply to?
+      description: You may select more than one
+      options:
+      - label: iOS (HealthKit)
+      - label: Android (Health Connect)
+  - type: textarea
+    attributes:
+      label: Summary
+      description: Your summary of the feature
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: API Changes
+      description: |
+        New/changed `DataType` values, `IHealthService` methods, models, or DI registration.
+    validations:
+      required: true
+  - type: textarea
+    id: nativeapis
+    attributes:
+      label: Native API Mapping
+      description: |
+        If known, the HealthKit identifier (e.g. `HKQuantityTypeIdentifier.StepCount`) and/or the Health Connect record type (e.g. `StepsRecord`) this maps to.
+  - type: textarea
+    attributes:
+      label: Intended Use Case
+    validations:
+      required: true

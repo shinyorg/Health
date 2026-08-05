@@ -1,0 +1,86 @@
+name: Bug Report
+description: You have found something wrong with Shiny.Health
+title: "[Bug]: "
+labels: [bug, unverified]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for filing an issue.  Please only file issues against the LATEST STABLE or LATEST BETA version of Shiny.Health from Nuget (ALPHAs are not accepted for issues).
+        If you have questions, please post them in GitHub discussions.
+        Documentation is at https://shinylib.net/health
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component/Nuget
+      description: The component you are filing against.  If it is not listed here it means there is no support for it
+      options:
+        - Shiny.Health
+        - Shiny.Health.Extensions.AI
+    validations:
+      required: true
+  - type: checkboxes
+    id: operatingsystems
+    attributes:
+      label: What operating system(s) are effected?
+      description: You may select more than one.  Note that Shiny.Health only supports iOS (HealthKit) and Android (Health Connect).
+      options:
+      - label: iOS
+      - label: Android
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Version(s) of Operating Systems
+      description: |
+        On Android, please also include the Health Connect app version (Settings > Apps > Health Connect).
+  - type: dropdown
+    id: operation
+    attributes:
+      label: What operation is failing?
+      options:
+        - Permissions (RequestPermissions / CheckPermissionStatus)
+        - Availability (IsAvailable)
+        - Reading data
+        - Writing data
+        - Observing data (IAsyncEnumerable)
+        - AI tools (Shiny.Health.Extensions.AI)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: datatypes
+    attributes:
+      label: Data Type(s)
+      description: Which `DataType` value(s) are involved (e.g. StepCount, HeartRate, BloodPressure)?
+      placeholder: StepCount, HeartRate
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1.
+        2.
+        3.
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual Behavior
+    validations:
+      required: true
+  - type: textarea
+    id: exception
+    attributes:
+      label: Exception or Log output
+      description: Please copy and paste any relevant log output
+  - type: textarea
+    id: codesample
+    attributes:
+      label: Code Sample
+      description: Please include a github repo with your reproducible sample

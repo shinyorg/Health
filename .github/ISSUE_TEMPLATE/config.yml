@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Shiny Community Forums
+    url: https://github.com/shinyorg/shiny/discussions
+    about: Please ask and answer questions here.
+  - name: Shiny.Health Documentation
+    url: https://shinylib.net/health
+    about: Reading, writing, observing, and platform notes.
