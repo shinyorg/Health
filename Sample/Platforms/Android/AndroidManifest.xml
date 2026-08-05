@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.shiny.healthsample" android:versionCode="1" android:versionName="1.0">
-	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:supportsRtl="true" android:label="Shiny Health"></application>
+	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:supportsRtl="true" android:label="Shiny Health">
+		<!-- Android 14+ (API 34) ships Health Connect in the platform and will not grant health
+		     permissions unless the app exposes this alias -->
+		<activity-alias
+			android:name="ViewPermissionUsageActivity"
+			android:exported="true"
+			android:targetActivity="org.shiny.healthsample.MainActivity"
+			android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+				<category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+			</intent-filter>
+		</activity-alias>
+	</application>
 
 	<queries>
 		<package android:name="com.google.android.apps.healthdata" />
@@ -8,7 +21,7 @@
 
 	<uses-permission android:name="android.permission.health.READ_STEPS" />
 	<uses-permission android:name="android.permission.health.READ_HEART_RATE" />
-	<uses-permission android:name="android.permission.health.READ_TOTAL_ENERGY_BURNED" />
+	<uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
 	<uses-permission android:name="android.permission.health.READ_DISTANCE" />
 	<uses-permission android:name="android.permission.health.READ_WEIGHT" />
 	<uses-permission android:name="android.permission.health.READ_HEIGHT" />
@@ -42,7 +55,7 @@
 
 	<uses-permission android:name="android.permission.health.WRITE_STEPS" />
 	<uses-permission android:name="android.permission.health.WRITE_HEART_RATE" />
-	<uses-permission android:name="android.permission.health.WRITE_TOTAL_ENERGY_BURNED" />
+	<uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED" />
 	<uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
 	<uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
 	<uses-permission android:name="android.permission.health.WRITE_HEIGHT" />
@@ -72,5 +85,4 @@
 	<uses-permission android:name="android.permission.health.WRITE_INTERMENSTRUAL_BLEEDING" />
 	<uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
 	<uses-permission android:name="android.permission.health.WRITE_NUTRITION" />
-	<uses-sdk />
 </manifest>

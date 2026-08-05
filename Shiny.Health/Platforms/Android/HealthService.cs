@@ -28,6 +28,14 @@ namespace Shiny.Health;
 public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidLifecycle.IOnActivityResult
 {
     const int REQUEST_CODE = 8765;
+
+    // Health Connect rejects a ReadRecordsRequest pageSize outside 1-5000
+    const int MAX_PAGE_SIZE = 5000;
+
+    // androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+    const string ACTION_REQUEST_PERMISSIONS = "androidx.activity.result.contract.action.REQUEST_PERMISSIONS";
+    const string EXTRA_PERMISSIONS = "androidx.activity.result.contract.extra.PERMISSIONS";
+
     TaskCompletionSource<bool>? permissionTcs;
 
 
@@ -73,14 +81,29 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         if (neededPermissions.All(granted.Contains))
             return permissions.Select(x => (x.Type, true));
 
-        var activity = platform.CurrentActivity
-            ?? throw new InvalidOperationException("No current activity available. Ensure permissions are requested after the activity has been created.");
-
-        permissionTcs = new TaskCompletionSource<bool>();
         var contract = new HealthPermissionsRequestContract();
         var intent = contract.CreateIntentImpl(platform.AppContext, neededPermissions);
-        activity.StartActivityForResult(intent, REQUEST_CODE);
-        await permissionTcs.Task.ConfigureAwait(false);
+
+        if (intent.Action == ACTION_REQUEST_PERMISSIONS)
+        {
+            // Android 14+ ships Health Connect as part of the platform, so the contract delegates to
+            // AndroidX's RequestMultiplePermissions - a pseudo-intent that only the AndroidX activity
+            // result registry understands, no activity can handle it.  Health permissions are plain
+            // runtime permissions there, so hand it to Shiny.
+            var runtimePermissions = intent.GetStringArrayExtra(EXTRA_PERMISSIONS) ?? neededPermissions.ToArray();
+            await platform.RequestPermissions(runtimePermissions).ConfigureAwait(false);
+        }
+        else
+        {
+            // pre-Android 14 the permissions belong to the Health Connect APK, which exposes its own
+            // permission activity
+            var activity = platform.CurrentActivity
+                ?? throw new InvalidOperationException("No current activity available. Ensure permissions are requested after the activity has been created.");
+
+            permissionTcs = new TaskCompletionSource<bool>();
+            activity.StartActivityForResult(intent, REQUEST_CODE);
+            await permissionTcs.Task.ConfigureAwait(false);
+        }
 
         granted = await GetGrantedPermissionsAsync(client).ConfigureAwait(false);
         return permissions.Select(p =>
@@ -134,7 +157,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
                         cont => client.GetChanges(token, cont)
                     ).ConfigureAwait(false);
 
-                    var response = (ChangesResponse)changesResponse;
+                    var response = changesResponse.JavaCast<ChangesResponse>();
                     foreach (var change in response.Changes)
                     {
                         if (change is UpsertionChange upsert)
@@ -530,11 +553,9 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
             cont => client.AggregateGroupByDuration(request, cont)
         ).ConfigureAwait(false);
 
-        var javaList = (System.Collections.IList)response;
         var list = new List<BloodPressureResult>();
-        foreach (var item in javaList)
+        foreach (var bucket in ToManagedList<AggregationResultGroupedByDuration>(response))
         {
-            var bucket = (AggregationResultGroupedByDuration)item!;
             var sysRaw = bucket.Result.Get(BloodPressureRecord.SystolicAvg!);
             var diaRaw = bucket.Result.Get(BloodPressureRecord.DiastolicAvg!);
             var systolic = ExtractPressure(sysRaw);
@@ -725,7 +746,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
             TimeRangeFilter.Between(startInstant, endInstant),
             new List<DataOrigin>(),
             true,
-            10000,
+            MAX_PAGE_SIZE,
             null!
         );
 
@@ -733,7 +754,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
             cont => client.ReadRecords(request, cont)
         ).ConfigureAwait(false);
 
-        var readResponse = (ReadRecordsResponse)response;
+        var readResponse = response.JavaCast<ReadRecordsResponse>();
         var list = new List<MenstruationFlowResult>();
         foreach (var item in readResponse.Records)
         {
@@ -957,12 +978,12 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
             TimeRangeFilter.Between(startInstant, endInstant),
             new List<DataOrigin>(),
             true,
-            10000,
+            MAX_PAGE_SIZE,
             null!
         );
 
         var response = await CallSuspendAsync(cont => client.ReadRecords(request, cont)).ConfigureAwait(false);
-        var readResponse = (ReadRecordsResponse)response;
+        var readResponse = response.JavaCast<ReadRecordsResponse>();
         var list = new List<TRecord>();
         foreach (var item in readResponse.Records)
             list.Add((TRecord)item!);
@@ -1201,11 +1222,9 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
             cont => client.AggregateGroupByDuration(request, cont)
         ).ConfigureAwait(false);
 
-        var javaList = (System.Collections.IList)response;
         var list = new List<NumericHealthResult>();
-        foreach (var item in javaList)
+        foreach (var bucket in ToManagedList<AggregationResultGroupedByDuration>(response))
         {
-            var bucket = (AggregationResultGroupedByDuration)item!;
             var rawValue = bucket.Result.Get(metric);
             var value = extractValue(rawValue);
             var bucketStart = DateTimeOffset.FromUnixTimeMilliseconds(bucket.StartTime.ToEpochMilli());
@@ -1236,7 +1255,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
             TimeRangeFilter.Between(startInstant, endInstant),
             new List<DataOrigin>(),
             true,
-            10000,
+            MAX_PAGE_SIZE,
             null!
         );
 
@@ -1244,7 +1263,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
             cont => client.ReadRecords(request, cont)
         ).ConfigureAwait(false);
 
-        var readResponse = (ReadRecordsResponse)response;
+        var readResponse = response.JavaCast<ReadRecordsResponse>();
         var records = new List<(DateTimeOffset Time, double Value)>();
         foreach (var item in readResponse.Records)
         {
@@ -1291,7 +1310,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
     {
         DataType.StepCount => ["android.permission.health.READ_STEPS"],
         DataType.HeartRate => ["android.permission.health.READ_HEART_RATE"],
-        DataType.Calories => ["android.permission.health.READ_TOTAL_ENERGY_BURNED"],
+        DataType.Calories => ["android.permission.health.READ_TOTAL_CALORIES_BURNED"],
         DataType.Distance => ["android.permission.health.READ_DISTANCE"],
         DataType.Weight => ["android.permission.health.READ_WEIGHT"],
         DataType.Height => ["android.permission.health.READ_HEIGHT"],
@@ -1329,7 +1348,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
     {
         DataType.StepCount => ["android.permission.health.WRITE_STEPS"],
         DataType.HeartRate => ["android.permission.health.WRITE_HEART_RATE"],
-        DataType.Calories => ["android.permission.health.WRITE_TOTAL_ENERGY_BURNED"],
+        DataType.Calories => ["android.permission.health.WRITE_TOTAL_CALORIES_BURNED"],
         DataType.Distance => ["android.permission.health.WRITE_DISTANCE"],
         DataType.Weight => ["android.permission.health.WRITE_WEIGHT"],
         DataType.Height => ["android.permission.health.WRITE_HEIGHT"],
@@ -1379,6 +1398,32 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
     }
 
 
+    /// <summary>
+    /// Materializes a java.util.List returned through the suspend-call bridge.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="CallSuspendAsync"/> hands back an untyped <see cref="Java.Lang.Object"/>, so the runtime
+    /// resolves the managed peer from the object's concrete Java class.  Health Connect returns Kotlin lists
+    /// whose concrete class varies with element count (<c>java.util.Arrays$ArrayList</c> from
+    /// <c>Arrays.asList</c>, <c>Collections$SingletonList</c>, Kotlin's <c>EmptyList</c>, ...).  None of those
+    /// have a binding, so the runtime falls back to the nearest bound base - usually
+    /// <see cref="Java.Util.AbstractList"/>, which implements <c>Java.Util.IList</c> but NOT
+    /// <see cref="System.Collections.IList"/>.  Casting to the latter throws InvalidCastException, so wrap the
+    /// JNI handle explicitly instead.
+    /// </remarks>
+    static List<T> ToManagedList<T>(Java.Lang.Object javaListObject) where T : Java.Lang.Object
+    {
+        var result = new List<T>();
+        using var javaList = new JavaList(javaListObject.Handle, JniHandleOwnership.DoNotTransfer);
+        foreach (var item in javaList)
+        {
+            if (item is Java.Lang.Object peer)
+                result.Add(peer.JavaCast<T>());
+        }
+        return result;
+    }
+
+
     static Task<Java.Lang.Object> CallSuspendAsync(Func<IContinuation, Java.Lang.Object?> suspendFunction)
     {
         var tcs = new TaskCompletionSource<Java.Lang.Object>();
@@ -1386,7 +1431,7 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
         var immediateResult = suspendFunction(continuation);
 
         if (immediateResult != null && !IsCoroutineSuspended(immediateResult))
-            tcs.TrySetResult(immediateResult);
+            SuspendContinuation.Complete(tcs, immediateResult);
 
         return tcs.Task;
     }
@@ -1406,16 +1451,48 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
 
         public ICoroutineContext Context => EmptyCoroutineContext.Instance;
 
-        public void ResumeWith(Java.Lang.Object result)
+        public void ResumeWith(Java.Lang.Object result) => Complete(tcs, result);
+
+
+        /// <summary>
+        /// Completes <paramref name="tcs"/> from a Kotlin <c>Result</c>.
+        /// </summary>
+        /// <remarks>
+        /// <c>Continuation.resumeWith</c> hands over a <c>kotlin.Result</c>.  Because <c>Result</c> is an
+        /// inline class, a success arrives as the bare value, but a failure arrives boxed as
+        /// <c>kotlin.Result$Failure</c> wrapping the Throwable.  Passing that through as if it were the
+        /// result means the real Health Connect error is lost and callers fail later on something
+        /// unrelated - an InvalidCastException, or a JNI abort when a method is invoked on it.
+        /// </remarks>
+        public static void Complete(TaskCompletionSource<Java.Lang.Object> tcs, Java.Lang.Object result)
         {
             try
             {
-                tcs.TrySetResult(result);
+                var failure = TryGetFailure(result);
+                if (failure == null)
+                    tcs.TrySetResult(result);
+                else
+                    tcs.TrySetException(failure);
             }
             catch (Exception ex)
             {
                 tcs.TrySetException(ex);
             }
+        }
+
+
+        static Exception? TryGetFailure(Java.Lang.Object? result)
+        {
+            if (result?.Class?.Name != "kotlin.Result$Failure")
+                return null;
+
+            var fieldId = JNIEnv.GetFieldID(result.Class.Handle, "exception", "Ljava/lang/Throwable;");
+            var handle = fieldId == IntPtr.Zero ? IntPtr.Zero : JNIEnv.GetObjectField(result.Handle, fieldId);
+            if (handle == IntPtr.Zero)
+                return new InvalidOperationException("The Health Connect call failed but did not report a reason.");
+
+            Exception? throwable = GetObject<Java.Lang.Throwable>(handle, JniHandleOwnership.TransferLocalRef);
+            return throwable ?? new InvalidOperationException("The Health Connect call failed but did not report a reason.");
         }
     }
 }

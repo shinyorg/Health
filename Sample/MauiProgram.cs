@@ -1,6 +1,9 @@
 ﻿using CommunityToolkit.Maui;
 using Shiny.Health;
 using Shiny.Health.Extensions.AI;
+#if DEBUG
+using Microsoft.Maui.DevFlow.Agent;
+#endif
 
 namespace Sample;
 
@@ -11,6 +14,7 @@ public static class MauiProgram
         .CreateBuilder()
         .UseMauiApp<App>()
         .UseMauiCommunityToolkit()
+        .UseShiny()
         .UseShinyShell(x => x.AddGeneratedMaps())
         .ConfigureFonts(fonts =>
         {
@@ -26,6 +30,7 @@ public static class MauiProgram
 #if DEBUG
         builder.Logging.SetMinimumLevel(LogLevel.Trace);
         builder.Logging.AddDebug();
+        builder.AddMauiDevFlowAgent();
 #endif
         builder.Services.AddHealthIntegration();
 
