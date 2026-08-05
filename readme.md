@@ -38,6 +38,10 @@ var result2 = await health.RequestPermissions(
     (PermissionType.ReadWrite, DataType.BloodPressure)
 );
 
+// the user can grant a subset, so only query what was actually granted - on Android a query for an
+// ungranted DataType throws (SecurityException) rather than returning an empty list
+var granted = result.Where(x => x.Success).Select(x => x.Type).ToHashSet();
+
 var end = DateTimeOffset.Now;
 var start = DateTimeOffset.Now.AddDays(-1);
 
@@ -349,3 +353,5 @@ public class MainActivity : MauiAppCompatActivity
 
 * The [Health Connect](https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata) app must be installed on the device — on Android 14+ (API 34) it is built into the platform
 * Minimum SDK version must be set to **28** (Android 9)
+* Set `targetSdkVersion` to match the platform you build against — an empty `<uses-sdk />` in your manifest suppresses it and falls back to `minSdkVersion`, which recent Android versions block at install time ("Unsafe app blocked")
+* Permission names follow the **Health Connect record**, not the HealthKit type — `DataType.Calories` reads `TotalCaloriesBurnedRecord` and needs `READ_TOTAL_CALORIES_BURNED`. A permission Android does not recognize is silently unknown: it can never be granted and every read of that type fails

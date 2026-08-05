@@ -327,6 +327,13 @@ public class MainActivity : MauiAppCompatActivity
 **Requirements:**
 - The Health Connect app must be installed on the device — on Android 14+ (API 34) it is built into the platform
 - Minimum SDK version must be set to **28** (Android 9)
+- Set `targetSdkVersion` to the platform you build against. An empty `<uses-sdk />` element suppresses
+  it and falls back to `minSdkVersion`, which recent Android versions block at install time with
+  "Unsafe app blocked - built for an older version of Android"
+- Permission names follow the **Health Connect record**, not the HealthKit type — `DataType.Calories`
+  reads `TotalCaloriesBurnedRecord` and needs `READ_TOTAL_CALORIES_BURNED`. There is no
+  `…_TOTAL_ENERGY_BURNED` permission on Android. A name Android does not recognize is silently
+  unknown: it can never be granted and every read of that type fails
 - Never request health permissions with `Permissions.RequestAsync<>` or the AndroidX activity-result
   contracts directly — always go through `IHealthService.RequestPermissions`, which picks the right
   flow for the OS version
@@ -719,6 +726,20 @@ await foreach (var result in health.Observe(DataType.HeartRate, pollingInterval:
 
 1. **Gate on availability** - Check `IsAvailable` (Android: Health Connect installed & up to date) before reading/writing
 2. **Always request permissions first** - Call `RequestPermissions` before reading or writing data. Use `PermissionType.Write` or `PermissionType.ReadWrite` when writing
+2. **Never query a `DataType` whose permission was refused** - The user can grant a subset of what
+   you asked for, so a partial grant is normal. On Android, querying an ungranted type **throws**
+   (`HealthConnectException` wrapping `SecurityException`) rather than returning an empty list, so a
+   single refused type aborts an entire dashboard load. Gate each query on the per-`DataType`
+   `Success` from `RequestPermissions`, or wrap the calls individually:
+   ```csharp
+   var result = await health.RequestPermissions(DataType.StepCount, DataType.Calories);
+   var granted = result.Where(x => x.Success).Select(x => x.Type).ToHashSet();
+
+   if (granted.Contains(DataType.StepCount))
+       Steps = (await health.GetStepCounts(start, end, Interval.Days)).Sum(x => x.Value);
+   ```
+   On iOS `Success` is not a reliable signal - HealthKit does not reveal read denials, so it can
+   report `true` and still return nothing
 2. **Use appropriate intervals** - Use `Interval.Days` for summaries, `Interval.Hours` for detailed breakdowns
 3. **Handle empty results** - Check `.Any()` before calling `.Average()` to avoid `InvalidOperationException`
 4. **Use CancellationToken** - Pass cancellation tokens for long-running queries
