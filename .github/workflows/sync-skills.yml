@@ -1,4 +1,4 @@
-name: Sync Skills to Skills Repository
+name: Sync Skills
 
 on:
   push:
@@ -11,9 +11,6 @@ on:
 jobs:
   sync-skills:
     runs-on: ubuntu-latest
-    # Only ever sync from branches starting with "v" (covers manual workflow_dispatch too,
-    # which is not constrained by the push branch filter above).
-    if: startsWith(github.ref_name, 'v')
 
     steps:
       - name: Checkout source repository
@@ -33,40 +30,55 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Sync skills directory
+      - name: Sync skills into the shiny plugin
+        env:
+          SOURCE_DIR: skills
         run: |
-          # Skills repo is a multi-plugin marketplace:
-          #   plugins/<plugin>/skills/<skill>/
-          # The shiny-health skill belongs to the shiny-client plugin.
-          SRC="source/skills/shiny-health"
-          DEST="skills-repo/plugins/shiny-client/skills"
+          set -euo pipefail
 
-          if [ ! -d "$SRC" ]; then
-            echo "::error::Source skill directory '$SRC' not found"
+          # All Shiny skills live in a single "shiny" plugin in shinyorg/skills.
+          # Every skill directory under $SOURCE_DIR is copied whole, so SKILL.md
+          # plus any reference/ content syncs together.
+          target_dir="skills-repo/plugins/shiny/skills"
+
+          if [ ! -d "$target_dir" ]; then
+            echo "::error::$target_dir does not exist in shinyorg/skills — has the plugin been renamed?"
             exit 1
           fi
 
-          # Remove the existing skill directory to ensure a clean sync (handles
-          # renamed/removed reference files), then copy the whole skill folder.
-          rm -rf "$DEST/shiny-health"
-          mkdir -p "$DEST"
-          cp -r "$SRC" "$DEST/"
+          synced=0
+          for skill_dir in "source/$SOURCE_DIR"/*/; do
+            [ -d "$skill_dir" ] || continue
+            skill_name=$(basename "$skill_dir")
+            echo "Syncing $skill_name -> plugins/shiny/skills/$skill_name"
+            rm -rf "${target_dir:?}/$skill_name"
+            cp -r "$skill_dir" "$target_dir/$skill_name"
+            synced=$((synced + 1))
+          done
+
+          if [ "$synced" -eq 0 ]; then
+            echo "::error::No skills found under $SOURCE_DIR/ — nothing to sync."
+            exit 1
+          fi
+          echo "Synced $synced skill(s)."
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.SKILLS_REPO_TOKEN }}
           path: skills-repo
-          commit-message: "Update shiny-health skill from Shiny Health repository"
-          title: "Update shiny-health skill"
+          commit-message: "Update skills from shinyorg/Health"
+          title: "Update skills from Shiny Health"
           body: |
-            This PR updates the shiny-health skill from the [Shiny Health repository](https://github.com/shinyorg/health).
+            This PR updates the `shiny` plugin skills from the [Shiny Health repository](https://github.com/shinyorg/Health).
 
+            **Source branch:** `${{ github.ref_name }}`
             **Source commit:** ${{ github.sha }}
             **Triggered by:** @${{ github.actor }}
+
             ---
-            *This PR was automatically created by the [sync-skills workflow](https://github.com/shinyorg/health/actions/workflows/sync-skills.yml).*
-          branch: update-shiny-health-skill
+            *This PR was automatically created by the [sync-skills workflow](https://github.com/shinyorg/Health/actions/workflows/sync-skills.yml).*
+          branch: update-skills-health
           delete-branch: true
           labels: |
             automated
