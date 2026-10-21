@@ -11,6 +11,7 @@
         <Authors>Allan Ritchie</Authors>
         <Owners>aritchie; shinylib</Owners>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>Copyright (c) $([System.DateTime]::Now.Year) Allan Ritchie</Copyright>
         <PackageIcon>icon.png</PackageIcon>
         <PackageProjectUrl>https://shinylib.net</PackageProjectUrl>
         <PackageReleaseNotes>https://shinylib.net/release-notes</PackageReleaseNotes>
