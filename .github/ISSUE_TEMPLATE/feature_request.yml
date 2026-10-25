@@ -9,6 +9,8 @@ body:
         Shiny.Health is a cross-platform API - features generally need to be expressible on BOTH Apple HealthKit and Android Health Connect.
         If a feature only exists on one platform, please say so and explain what should happen on the other.
         Documentation is at https://shinylib.net/health
+
+        > ⭐ **Finding this library useful? Please give the repository a [Star](https://github.com/shinyorg/Health) - it's free and it's how the project gets seen.**
   - type: checkboxes
     id: operatingsystems
     attributes:
