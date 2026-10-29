@@ -355,3 +355,7 @@ public class MainActivity : MauiAppCompatActivity
 * Minimum SDK version must be set to **28** (Android 9)
 * Set `targetSdkVersion` to match the platform you build against — an empty `<uses-sdk />` in your manifest suppresses it and falls back to `minSdkVersion`, which recent Android versions block at install time ("Unsafe app blocked")
 * Permission names follow the **Health Connect record**, not the HealthKit type — `DataType.Calories` reads `TotalCaloriesBurnedRecord` and needs `READ_TOTAL_CALORIES_BURNED`. A permission Android does not recognize is silently unknown: it can never be granted and every read of that type fails
+
+## Commercial Support
+
+Shipping this to production? [ShinySoft Technologies](https://shinysoft.biz), the company that builds and maintains the Shiny libraries, offers priority issue response, support agreements, architecture reviews and private office hours. See [Commercial Support](https://shinylib.net/foundation/support/?utm_source=github&utm_medium=readme#commercial-support) or [get in touch](https://shinysoft.biz/contact?utm_source=github&utm_medium=readme). Community support through GitHub issues and discussions stays free.

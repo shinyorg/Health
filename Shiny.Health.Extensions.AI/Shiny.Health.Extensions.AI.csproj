@@ -34,8 +34,8 @@
     <ItemGroup>
         <None Include="..\nuget.png" Pack="true" PackagePath="icon.png" />
         <None Include="..\readme.md" Pack="true" PackagePath="\" />
-        <PackageReference Include="NerdBank.GitVersioning" Version="3.9.50" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.5.2" />
+        <PackageReference Include="NerdBank.GitVersioning" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
         <ProjectReference Include="..\Shiny.Health\Shiny.Health.csproj" />
     </ItemGroup>
 

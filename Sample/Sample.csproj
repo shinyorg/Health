@@ -29,16 +29,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.90" />
-        <PackageReference Include="CommunityToolkit.Maui" Version="14.1.0"/>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2"/>
-        <PackageReference Include="Shiny.Hosting.Maui" Version="5.3.0" />
-        <PackageReference Include="Shiny.Maui.Shell" Version="6.3.2" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.7"/>
+        <PackageReference Include="Microsoft.Maui.Controls" />
+        <PackageReference Include="Shiny.Maui.Controls" />
+        <PackageReference Include="CommunityToolkit.Mvvm"/>
+        <PackageReference Include="Shiny.Hosting.Maui" />
+        <PackageReference Include="Shiny.Maui.Shell" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug"/>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <PackageReference Include="Microsoft.Maui.DevFlow.Agent" Version="0.1.0-preview.12.26368.2" />
+        <PackageReference Include="Microsoft.Maui.DevFlow.Agent" />
     </ItemGroup>
 
     <ItemGroup>

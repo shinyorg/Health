@@ -34,7 +34,7 @@
     <ItemGroup>
         <None Include="..\nuget.png" Pack="true" PackagePath="icon.png" />
         <None Include="..\readme.md" Pack="true" PackagePath="\" />
-        <PackageReference Include="NerdBank.GitVersioning" Version="3.9.50" PrivateAssets="All" />
+        <PackageReference Include="NerdBank.GitVersioning" PrivateAssets="All" />
     </ItemGroup>
 
     <PropertyGroup Condition="$(TargetFramework.Contains('android'))">
@@ -49,15 +49,15 @@
         <None Include="Platforms\**\*.cs" />
         <Compile Remove="Platforms\**\*.cs" />
 
-        <PackageReference Include="Shiny.Core" Version="5.0.0-beta-0132" />
+        <PackageReference Include="Shiny.Core" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetFramework.Contains('android'))">
         <Compile Include="Platforms\Shared\**\*.cs" />
         <Compile Include="Platforms\Android\**\*.cs" />
 
-        <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" Version="2.10.0.2" />
-        <PackageReference Include="Xamarin.AndroidX.Health.Connect.ConnectClient" Version="1.1.0.2" />
+        <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" />
+        <PackageReference Include="Xamarin.AndroidX.Health.Connect.ConnectClient" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetFramework.Contains('ios'))">

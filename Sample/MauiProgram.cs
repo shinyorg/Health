@@ -1,4 +1,3 @@
-﻿using CommunityToolkit.Maui;
 using Shiny.Health;
 using Shiny.Health.Extensions.AI;
 #if DEBUG
@@ -13,7 +12,7 @@ public static class MauiProgram
     public static MauiApp CreateMauiApp() => MauiApp
         .CreateBuilder()
         .UseMauiApp<App>()
-        .UseMauiCommunityToolkit()
+        .UseShinyControls()
         .UseShiny()
         .UseShinyShell(x => x.AddGeneratedMaps())
         .ConfigureFonts(fonts =>

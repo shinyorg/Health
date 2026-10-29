@@ -1,0 +1,19 @@
+<Project>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.5.2" />
+        <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.7" />
+        <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.120" />
+        <PackageVersion Include="Microsoft.Maui.DevFlow.Agent" Version="0.1.0-preview.13.26526.5" />
+        <PackageVersion Include="NerdBank.GitVersioning" Version="3.10.94" />
+        <PackageVersion Include="Shiny.Core" Version="6.4.0" />
+        <PackageVersion Include="Shiny.Hosting.Maui" Version="6.4.0" />
+        <PackageVersion Include="Shiny.Maui.Controls" Version="2.1.0" />
+        <PackageVersion Include="Shiny.Maui.Shell" Version="7.0.3" />
+        <PackageVersion Include="Xamarin.AndroidX.Health.Connect.ConnectClient" Version="1.1.0.4" />
+        <PackageVersion Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" Version="2.11.0.1" />
+    </ItemGroup>
+</Project>
