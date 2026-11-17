@@ -1394,6 +1394,15 @@ public class HealthService(AndroidPlatform platform) : IHealthService, IAndroidL
             foreach (var item in enumerable)
                 set.Add(item?.ToString()!);
         }
+        else if (result != null)
+        {
+            // Kotlin returns sets whose concrete class has no .NET binding, so the
+            // IEnumerable check above can be false. Fall back to java.util.Collection.
+            var iterator = result.JavaCast<Java.Util.ICollection>().Iterator();
+            while (iterator.HasNext)
+                set.Add(iterator.Next()?.ToString()!);
+        }
+
         return set;
     }
 
